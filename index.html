@@ -145,7 +145,7 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
 .oc-row:last-child{border-bottom:none}
 .oc-row span:last-child{font-weight:700;color:var(--red);flex-shrink:0;margin-left:8px}
 .oc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
-.oc-save{font-size:11px;font-weight:700;color:var(--green);background:var(--green-lt);padding:3px 9px;border-radius:20px}
+.oc-save{font-size:11px;font-weight:700;color:var(--text2);background:#F5F5F5;padding:3px 9px;border-radius:5px;letter-spacing:.02em}
 .piano-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
 .piano-item:last-child{border-bottom:none}
 .piano-dot{width:7px;height:7px;border-radius:50%;margin-top:5px;flex-shrink:0}
@@ -178,10 +178,50 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
 /* PAYPAL MATCH */
 .pp-match{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:var(--r-sm);padding:10px 14px;font-size:12px;color:#1D4ED8;margin-bottom:14px}
 
-@media(max-width:680px){
-  .sidebar{display:none}.kpi-strip{flex-direction:column}
-  .grid2,.ott-cards,.ric-cards{grid-template-columns:1fr}
-  .page{padding:14px 16px}
+@media(max-width:768px){
+  .sidebar{display:none}
+  .page{padding:12px 14px}
+  .topnav{padding:0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .topnav::-webkit-scrollbar{display:none}
+  .tnav{padding:0 9px;font-size:12px;white-space:nowrap;flex-shrink:0}
+  .tnav-right{display:none}
+  .kpi-strip{flex-wrap:wrap}
+  .kpi-cell{flex:1 1 48%;min-width:130px;border-right:none;border-bottom:1px solid var(--border)}
+  .kpi-cell:nth-child(odd){border-right:1px solid var(--border)}
+  .kpi-cell:last-child{border-bottom:none}
+  .kpi-num{font-size:18px}
+  .grid2,.ott-cards{grid-template-columns:1fr}
+  .page-title{font-size:20px;margin-bottom:12px}
+  .page-head{flex-direction:column;gap:8px;align-items:flex-start}
+  .tbl-box{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tbl-box table{min-width:480px}
+  #uploadModal > div{width:95vw;padding:18px 14px}
+  .budget-row{flex-wrap:wrap;gap:5px}
+  .budget-bar-wrap{flex:1 1 100%;order:3}
+}
+
+/* MOBILE BOTTOM NAV */
+.mobile-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--surface);border-top:1px solid var(--border);
+  padding:6px 0 calc(6px + env(safe-area-inset-bottom));
+  z-index:100;
+  justify-content:space-around;
+}
+.mnav-item{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:10px;font-weight:600;color:var(--text3);
+  background:none;border:none;font-family:inherit;cursor:pointer;
+  padding:4px 8px;border-radius:8px;transition:color .12s;
+  min-width:44px;
+}
+.mnav-item.on{color:var(--text)}
+.mnav-item svg{width:20px;height:20px}
+@media(max-width:768px){
+  .mobile-nav{display:flex}
+  .main{padding-bottom:70px}
+  .topnav{display:none}
 }
 </style>
 </head>
@@ -206,13 +246,13 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
     <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
   </button>
   <button class="sico" onclick="setView('budget',this)" title="Budget">
-    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
   </button>
   <button class="sico" onclick="setView('ricorrenti',this)" title="Ricorrenti">
-    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
   </button>
   <button class="sico" onclick="setView('ottimizzazioni',this)" title="Ottimizzazioni">
-    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
   </button>
   <button class="sico sico-bot" title="Pierluigi Lovato">
     <div style="width:22px;height:22px;border-radius:50%;background:var(--text);color:#fff;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800">PL</div>
@@ -412,26 +452,57 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
 
 </div><!-- /page -->
 </div><!-- /main -->
+
+<!-- MOBILE BOTTOM NAV -->
+<div class="mobile-nav">
+  <button class="mnav-item on" id="mnav-panoramica" onclick="setView('panoramica',null)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 3a4 4 0 108 0 4 4 0 00-8 0z"/></svg>
+    Home
+  </button>
+  <button class="mnav-item" id="mnav-movimenti" onclick="setView('movimenti',null)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    Movimenti
+  </button>
+  <button class="mnav-item" id="mnav-categorie" onclick="setView('categorie',null)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+    Categorie
+  </button>
+  <button class="mnav-item" id="mnav-budget" onclick="setView('budget',null)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    Budget
+  </button>
+  <button class="mnav-item" id="mnav-ottimizzazioni" onclick="setView('ottimizzazioni',null)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    Ottimizza
+  </button>
+</div>
+
 </div><!-- /shell -->
 
 
 <div id="uploadModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:14px;padding:28px 32px;width:480px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.2)">
-    <div style="font-size:18px;font-weight:800;margin-bottom:6px">Aggiorna movimenti</div>
-    <div style="font-size:13px;color:var(--text3);margin-bottom:20px">Carica il file Excel scaricato da Isybank. I duplicati vengono saltati automaticamente.</div>
-    <div id="dropZone" style="border:2px dashed var(--border2);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:all .15s"
-      ondragover="event.preventDefault();this.style.borderColor='var(--blue)'"
-      ondragleave="this.style.borderColor='var(--border2)'"
-      ondrop="event.preventDefault();this.style.borderColor='var(--border2)';uploadFile(event.dataTransfer.files[0])"
+  <div style="background:#fff;border-radius:14px;padding:24px 28px;width:480px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+    <div style="font-size:18px;font-weight:800;margin-bottom:4px">Aggiorna movimenti</div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:16px">Scarica da Isybank (Ultimi 13 mesi) e carica qui. I duplicati vengono ignorati.</div>
+    <div id="dropZone" style="border:2px dashed var(--border2);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:all .15s"
+      ondragover="event.preventDefault();this.style.borderColor='var(--blue)';this.style.background='var(--blue-lt)'"
+      ondragleave="this.style.borderColor='var(--border2)';this.style.background=''"
+      ondrop="event.preventDefault();this.style.borderColor='var(--border2)';this.style.background='';uploadFile(event.dataTransfer.files[0])"
       onclick="document.getElementById('fileInput').click()">
-      <div style="font-size:32px;margin-bottom:8px">📂</div>
-      <div style="font-weight:600;margin-bottom:4px">Trascina il file .xlsx qui</div>
-      <div style="font-size:12px;color:var(--text3)">oppure clicca per selezionare</div>
+      <div style="font-size:32px;margin-bottom:6px">📂</div>
+      <div style="font-weight:700;margin-bottom:3px">Trascina il file .xlsx qui</div>
+      <div style="font-size:12px;color:var(--text3)">oppure tocca per selezionare</div>
       <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="uploadFile(this.files[0])">
     </div>
-    <div id="uploadStatus" style="margin-top:14px;font-size:13px;min-height:20px"></div>
-    <div style="display:flex;justify-content:flex-end;margin-top:20px">
-      <button class="btn" onclick="document.getElementById('uploadModal').style.display='none'">Chiudi</button>
+    <div id="uploadProgress" style="display:none;margin-top:12px">
+      <div style="font-size:13px;font-weight:600;color:var(--blue);margin-bottom:6px" id="uploadProgressLabel">Caricamento...</div>
+      <div style="height:4px;background:#EFF6FF;border-radius:2px;overflow:hidden">
+        <div id="uploadProgressBar" style="height:100%;background:var(--blue);border-radius:2px;width:0%;transition:width .4s"></div>
+      </div>
+    </div>
+    <div id="uploadStatus" style="margin-top:12px;font-size:13px"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px">
+      <button class="btn" id="uploadCloseBtn" onclick="document.getElementById('uploadModal').style.display='none'">Chiudi</button>
     </div>
   </div>
 </div>
@@ -456,18 +527,64 @@ let MONTHLY = [];
 async function uploadFile(file){
   if(!file) return;
   const st=document.getElementById("uploadStatus");
-  st.innerHTML='<span style="color:var(--blue)">⏳ Caricamento in corso...</span>';
+  const prog=document.getElementById("uploadProgress");
+  const progBar=document.getElementById("uploadProgressBar");
+  const progLabel=document.getElementById("uploadProgressLabel");
+  const dz=document.getElementById("dropZone");
+  const closeBtn=document.getElementById("uploadCloseBtn");
+
+  st.innerHTML="";
+  prog.style.display="block";
+  progBar.style.width="15%";
+  progBar.style.background="var(--blue)";
+  progLabel.style.color="var(--blue)";
+  progLabel.textContent="Invio file...";
+  dz.style.opacity=".4";
+  dz.style.pointerEvents="none";
+  closeBtn.disabled=true;
+
   const fd=new FormData(); fd.append("file",file);
   try{
+    progBar.style.width="40%";
+    progLabel.textContent="Analisi movimenti...";
     const res=await fetch(API_URL+"/upload",{method:"POST",headers:{"x-api-key":API_KEY},body:fd});
     const json=await res.json();
     if(!res.ok) throw new Error(json.detail||"Errore upload");
-    st.innerHTML=`<span style="color:var(--green)">✓ ${json.inserted} nuovi movimenti importati (${json.skipped} già presenti).<br>Periodo: ${json.date_range.from} → ${json.date_range.to}</span>`;
+
+    progBar.style.width="75%";
+    progLabel.textContent="Aggiornamento app...";
     await loadData();
+
+    progBar.style.width="100%";
+    progBar.style.background="var(--green)";
+    progLabel.style.color="var(--green)";
+    progLabel.textContent="Completato!";
+
+    st.innerHTML=json.inserted>0
+      ? `<div style="background:var(--green-lt);border:1px solid #BBF7D0;border-radius:8px;padding:10px 14px">
+           <div style="font-weight:700;color:var(--green)">✓ ${json.inserted} nuovi movimenti importati</div>
+           <div style="font-size:12px;color:#166534;margin-top:2px">${json.skipped} già presenti · ${json.date_range.from} → ${json.date_range.to}</div>
+         </div>`
+      : `<div style="background:#F5F5F5;border-radius:8px;padding:10px 14px">
+           <div style="font-weight:600">Nessuna novità — dati già aggiornati</div>
+           <div style="font-size:12px;color:var(--text3);margin-top:2px">${json.skipped} movimenti già presenti</div>
+         </div>`;
+
+    setTimeout(()=>{
+      document.getElementById("uploadModal").style.display="none";
+      prog.style.display="none"; progBar.style.width="0%";
+      dz.style.opacity="1"; dz.style.pointerEvents="auto";
+      closeBtn.disabled=false; st.innerHTML="";
+    },3000);
+
   } catch(e){
-    st.innerHTML=`<span style="color:var(--red)">✗ ${e.message}</span>`;
+    prog.style.display="none";
+    dz.style.opacity="1"; dz.style.pointerEvents="auto";
+    closeBtn.disabled=false;
+    st.innerHTML=`<div style="background:var(--red-lt);border-radius:8px;padding:10px 14px;color:var(--red);font-weight:600">✗ ${e.message}</div>`;
   }
 }
+
 
 // ─── LOAD DATA ────────────────────────────────────────────────────
 function fmtMeseLabel(dateStr){
@@ -547,7 +664,9 @@ async function loadData(){
 
 
 
-const PAL=["#DC2626","#2563EB","#16A34A","#D97706","#7C3AED","#0891B2","#DB2777","#64748B","#EA580C","#059669"];
+// Palette moderna: blu scuro, grigi caldi, accenti misurati
+const PAL=["#1E3A5F","#2D6A9F","#4A9CC4","#6DB5D4","#94CBDF","#B8DCEA","#3D5A73","#5B7FA6","#7BA3C4","#9DC4DC"];
+const PAL_CHART=["#1E3A5F","#2D6A9F","#4A9CC4","#6DB5D4","#94CBDF","#B8DCEA","#3D5A73","#5B7FA6","#7BA3C4","#9DC4DC"];
 const fv=v=>"€ "+Math.abs(v).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2});
 const fs=v=>(v>=0?"+":"")+fv(v);
 const chopt={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}};
@@ -558,12 +677,18 @@ function setView(id,sideEl){
   document.querySelectorAll(".panel").forEach(p=>p.classList.remove("on"));
   document.getElementById("pnl-"+id).classList.add("on");
   document.querySelectorAll(".tnav").forEach(b=>b.classList.remove("on"));
-  document.getElementById("tnav-"+id).classList.add("on");
+  const tnav=document.getElementById("tnav-"+id);
+  if(tnav)tnav.classList.add("on");
   if(!_sicos)_sicos=document.querySelectorAll(".sico:not(.sico-bot)");
   _sicos.forEach(i=>i.classList.remove("on"));
   const map={panoramica:0,movimenti:1,categorie:2,mensile:3,confronto:4,budget:5,ricorrenti:6,ottimizzazioni:7};
   if(sideEl)sideEl.classList.add("on");
   else if(map[id]!==undefined)_sicos[map[id]]&&_sicos[map[id]].classList.add("on");
+  // Update mobile nav
+  document.querySelectorAll(".mnav-item").forEach(b=>b.classList.remove("on"));
+  const mnav=document.getElementById("mnav-"+id);
+  if(mnav)mnav.classList.add("on");
+  window.scrollTo({top:0,behavior:"smooth"});
 }
 function goMov(cat,mese){
   setView("movimenti",null);
@@ -655,8 +780,8 @@ if(_cDash)_cDash.destroy();
 _cDash=new Chart(document.getElementById("cDash"),{type:"bar",data:{
   labels:MONTHLY.map(r=>r.m),
   datasets:[
-    {label:"Entrate",data:MONTHLY.map(r=>r.e),backgroundColor:"rgba(22,163,74,.2)",borderColor:"#16A34A",borderWidth:1.5},
-    {label:"Uscite",data:MONTHLY.map(r=>r.u),backgroundColor:"rgba(220,38,38,.15)",borderColor:"#DC2626",borderWidth:1.5},
+    {label:"Entrate",data:MONTHLY.map(r=>r.e),backgroundColor:"rgba(30,58,95,.12)",borderColor:"#1E3A5F",borderWidth:1.5},
+    {label:"Uscite",data:MONTHLY.map(r=>r.u),backgroundColor:"rgba(220,38,38,.12)",borderColor:"#DC2626",borderWidth:1.5},
   ]},
   options:{...chopt,plugins:{legend:{labels:{font:{size:11}}}},
     scales:{x:{ticks:{font:{size:10},autoSkip:false,maxRotation:45}},y:{ticks:{callback:v=>"€"+Math.round(v/1000)+"k"}}}}
@@ -673,7 +798,7 @@ _cPie=new Chart(document.getElementById("cPie"),{type:"doughnut",data:{
 if(_cSaldo)_cSaldo.destroy();
 _cSaldo=new Chart(document.getElementById("cSaldo"),{type:"bar",data:{
   labels:MONTHLY.map(r=>r.m),
-  datasets:[{data:MONTHLY.map(r=>r.s),backgroundColor:MONTHLY.map(r=>r.s>=0?"rgba(22,163,74,.55)":"rgba(220,38,38,.55)"),borderRadius:3}]},
+  datasets:[{data:MONTHLY.map(r=>r.s),backgroundColor:MONTHLY.map(r=>r.s>=0?"rgba(30,58,95,.7)":"rgba(220,38,38,.55)"),borderRadius:3}]},
   options:{...chopt,scales:{x:{ticks:{font:{size:10},autoSkip:false,maxRotation:45}},y:{ticks:{callback:v=>"€"+Math.round(v)}}}}
 });
 }
@@ -725,7 +850,7 @@ if(_cMensTrend)_cMensTrend.destroy();
 _cMensTrend=new Chart(document.getElementById("cMensTrend"),{type:"line",data:{
   labels:MONTHLY.map(r=>r.m),
   datasets:[
-    {label:"Entrate",data:MONTHLY.map(r=>r.e),borderColor:"#16A34A",backgroundColor:"rgba(22,163,74,.06)",fill:true,tension:.3,pointRadius:3},
+    {label:"Entrate",data:MONTHLY.map(r=>r.e),borderColor:"#1E3A5F",backgroundColor:"rgba(30,58,95,.06)",fill:true,tension:.3,pointRadius:3},
     {label:"Uscite",data:MONTHLY.map(r=>r.u),borderColor:"#DC2626",backgroundColor:"rgba(220,38,38,.06)",fill:true,tension:.3,pointRadius:3},
   ]},
   options:{...chopt,plugins:{legend:{labels:{font:{size:11}}}},
@@ -782,7 +907,7 @@ function drillCat(cat){
   const _c=cat;
   drillC=new Chart(document.getElementById("cDrill"),{type:"bar",data:{
     labels:MONTHLY.map(r=>r.m),
-    datasets:[{data:MONTHLY.map(r=>byM[r.mk]||0),backgroundColor:"rgba(220,38,38,.5)",borderColor:"#DC2626",borderWidth:1,borderRadius:3}]},
+    datasets:[{data:MONTHLY.map(r=>byM[r.mk]||0),backgroundColor:"rgba(30,58,95,.55)",borderColor:"#1E3A5F",borderWidth:1,borderRadius:3}]},
     options:{...chopt,scales:{x:{ticks:{font:{size:10},autoSkip:false,maxRotation:45}},y:{ticks:{callback:v=>"€"+v.toLocaleString("it-IT")}}},
       onClick:(e,els)=>{if(els.length)goMov(_c,MONTHLY[els[0].index].m);}}
   });
@@ -1115,14 +1240,14 @@ document.getElementById("ottCards").innerHTML=OTT.map(o=>`
     </div>
     <div class="oc-insight">${o.insight}</div>
     <div class="oc-rows">${o.ms.map(m=>`<div class="oc-row"><span>${m.n}</span><span>${fv(m.t)} ×${m.c}</span></div>`).join("")}</div>
-    <div class="oc-foot"><span class="oc-save">💰 ${o.save}</span>
+    <div class="oc-foot"><span class="oc-save">${o.save}</span>
       <button class="btn btn-sm" onclick="goMov('${o.cat.replace(/'/g,"\'")}',' ')">→</button></div>
   </div>`).join("");
 
 new Chart(document.getElementById("cOttBar"),{type:"bar",data:{
   labels:OTT.map(o=>o.cat.length>16?o.cat.slice(0,14)+"…":o.cat),
   datasets:[{label:"Media mensile",data:OTT.map(o=>+(o.tot/13).toFixed(0)),
-    backgroundColor:OTT.map(o=>o.tipo==="riducibile"?"rgba(220,38,38,.65)":"rgba(163,163,163,.45)"),borderRadius:3}]},
+    backgroundColor:OTT.map(o=>o.tipo==="riducibile"?"#1E3A5F":"#D1D5DB"),borderRadius:3}]},
   options:{...chopt,scales:{x:{ticks:{font:{size:10}}},y:{ticks:{callback:v=>"€"+v}}}}});
 
 const PIANO=[

@@ -111,6 +111,15 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
 .chip-x{background:none;border:none;cursor:pointer;font-size:12px;color:var(--text3);padding:0;font-weight:700;line-height:1}
 .chip-x:hover{color:var(--text)}
 
+/* CONFRONTO TABLE — scroll orizzontale */
+#tCmp{min-width:800px}
+#tCmp th,#tCmp td{white-space:nowrap;padding:8px 12px}
+#tCmp thead th:first-child,#tCmp tbody td:first-child{
+  position:sticky;left:0;background:var(--surface);z-index:1;
+  border-right:1px solid var(--border);font-weight:600;
+}
+.cmp-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r)}
+
 /* BACK LINK */
 .back{display:inline-flex;align-items:center;gap:5px;margin-bottom:14px;font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;background:none;border:none;font-family:inherit;padding:0}
 .back:hover{color:var(--text)}
@@ -239,7 +248,8 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
   #pnl-categorie .tbl-box tbody td:nth-child(n+3){display:none !important}
   #pnl-categorie .tbl-box table{min-width:0 !important}
 
-  /* MOVIMENTI — nascondi dettagli e categoria, mostra Data/Op/Importo */
+  /* MOVIMENTI — nascondi grafici (meno utili) e colonne extra tabella */
+  #pnl-movimenti .grid2{display:none !important}
   #pnl-movimenti .tbl-box thead th:nth-child(3),
   #pnl-movimenti .tbl-box thead th:nth-child(4),
   #pnl-movimenti .tbl-box tbody td:nth-child(3),
@@ -260,9 +270,8 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
   /* INFO */
   .info{font-size:11px !important;padding:8px 10px !important;margin-bottom:10px !important}
 
-  /* TREND STRIP */
-  #trendStrip{gap:4px !important;margin-bottom:10px !important}
-  #trendStrip .bdg{font-size:10px !important;padding:2px 6px !important}
+  /* TREND STRIP — nascosto su mobile, troppo confuso */
+  #trendStrip{display:none !important}
 
   /* NUM BADGES */
   .num-red,.num-green{font-size:11px !important;padding:2px 5px !important;white-space:nowrap !important}
@@ -304,7 +313,16 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
   .sbox .sv{font-size:15px !important}
   .sbox .sl{font-size:9px !important}
 
-  /* BACK LINK */
+  /* CONFRONTO TABLE — scroll orizzontale */
+#tCmp{min-width:800px}
+#tCmp th,#tCmp td{white-space:nowrap;padding:8px 12px}
+#tCmp thead th:first-child,#tCmp tbody td:first-child{
+  position:sticky;left:0;background:var(--surface);z-index:1;
+  border-right:1px solid var(--border);font-weight:600;
+}
+.cmp-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r)}
+
+/* BACK LINK */
   .back{margin-bottom:10px !important}
   .drill-h{font-size:18px !important}
 
@@ -319,23 +337,26 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
   position:fixed;bottom:0;left:0;right:0;
   background:var(--surface);
   border-top:1px solid var(--border);
-  padding:8px 0 calc(10px + env(safe-area-inset-bottom));
-  z-index:100;
+  padding:10px 4px calc(16px + env(safe-area-inset-bottom));
+  z-index:200;
   justify-content:space-around;
-  align-items:flex-start;
+  align-items:center;
 }
 .mnav-item{
-  display:flex;flex-direction:column;align-items:center;gap:4px;
-  font-size:10px;font-weight:600;color:var(--text3);
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  font-size:9px;font-weight:500;color:var(--text3);
   background:none;border:none;font-family:inherit;cursor:pointer;
-  padding:2px 12px;border-radius:8px;transition:color .15s;
-  min-width:56px;-webkit-tap-highlight-color:transparent;
+  padding:0 10px;transition:color .15s;
+  min-width:52px;max-width:72px;
+  -webkit-tap-highlight-color:transparent;
+  letter-spacing:.02em;text-transform:uppercase;
 }
 .mnav-item.on{color:var(--text)}
-.mnav-item svg{width:22px;height:22px;stroke-width:1.8}
+.mnav-item.on svg{stroke:var(--text)}
+.mnav-item svg{width:24px;height:24px;stroke-width:1.6;stroke:var(--text3);fill:none}
 @media(max-width:768px){
   .mobile-nav{display:flex}
-  .main{padding-bottom:80px}
+  .main{padding-bottom:90px}
   .topnav{display:none}
 }
 .altro-item{
@@ -389,8 +410,8 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
   margin-top:8px;min-height:18px;
 }
 </style>
-<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExNSIgZmlsbD0iIzBBMEEwQSIvPgogIDx0ZXh0IHg9IjI1NiIgeT0iMzcwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iSW50ZXIsc3lzdGVtLXVpLHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI4MDAiIGZvbnQtc2l6ZT0iMzQwIiBmaWxsPSIjZmZmZmZmIj5TPC90ZXh0Pgo8L3N2Zz4=">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExNSIgZmlsbD0iIzBBMEEwQSIvPgogIDx0ZXh0IHg9IjI1NiIgeT0iMzcwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iSW50ZXIsc3lzdGVtLXVpLHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI4MDAiIGZvbnQtc2l6ZT0iMzQwIiBmaWxsPSIjZmZmZmZmIj5TPC90ZXh0Pgo8L3N2Zz4=">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExNSIgZmlsbD0iIzBBMEEwQSIvPjx0ZXh0IHg9IjI2MCIgeT0iMzcwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iSW50ZXIsc3lzdGVtLXVpLC1hcHBsZS1zeXN0ZW0sc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjgwMCIgZm9udC1zaXplPSIzMzAiIGZpbGw9IiNGRkZGRkYiIGxldHRlci1zcGFjaW5nPSItOCI+UzwvdGV4dD48L3N2Zz4=">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExNSIgZmlsbD0iIzBBMEEwQSIvPjx0ZXh0IHg9IjI2MCIgeT0iMzcwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iSW50ZXIsc3lzdGVtLXVpLC1hcHBsZS1zeXN0ZW0sc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjgwMCIgZm9udC1zaXplPSIzMzAiIGZpbGw9IiNGRkZGRkYiIGxldHRlci1zcGFjaW5nPSItOCI+UzwvdGV4dD48L3N2Zz4=">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Spese">
@@ -583,8 +604,8 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
       <div class="card" style="margin-bottom:0"><div class="card-title">Entrate vs Uscite</div><div style="position:relative;height:230px"><canvas id="cCmpEU"></canvas></div></div>
       <div class="card" style="margin-bottom:0"><div class="card-title">Saldo netto</div><div style="position:relative;height:230px"><canvas id="cCmpSaldo"></canvas></div></div>
     </div>
-    <div class="card" style="margin-bottom:12px"><div class="card-title">Categorie a confronto</div><div style="position:relative;height:280px"><canvas id="cCmpCat"></canvas></div></div>
-    <div class="tbl-box"><div class="scroll-x"><table id="tCmp"></table></div></div>
+    <div class="card" style="margin-bottom:12px"><div class="card-title">Categorie a confronto</div><div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><div id="cmpCatWrap" style="position:relative;height:280px;min-width:600px"><canvas id="cCmpCat"></canvas></div></div></div>
+    <div class="cmp-scroll"><table id="tCmp"></table></div>
   </div>
 </div>
 

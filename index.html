@@ -234,18 +234,17 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
   .tbl-box thead th{padding:7px 8px !important;font-size:9px !important;white-space:nowrap !important}
   .tbl-box tbody td{padding:9px 8px !important}
 
-  /* CATEGORIE — nascondi colonne extra */
-  #tbCat tr td:nth-child(3),
-  #tbCat tr td:nth-child(4),
-  #tbCat tr td:nth-child(5),
-  #tbCat thead th:nth-child(3),
-  #tbCat thead th:nth-child(4),
-  #tbCat thead th:nth-child(5){display:none !important}
+  /* CATEGORIE — solo Categoria e Totale su mobile */
+  #pnl-categorie .tbl-box thead th:nth-child(n+3),
+  #pnl-categorie .tbl-box tbody td:nth-child(n+3){display:none !important}
+  #pnl-categorie .tbl-box table{min-width:0 !important}
 
-  /* MOVIMENTI — tabella compatta */
-  #tbMov tr td:nth-child(3),
-  #tbMov thead th:nth-child(3){display:none !important}
-  #tbMov tr td:nth-child(4){max-width:80px !important}
+  /* MOVIMENTI — nascondi dettagli e categoria, mostra Data/Op/Importo */
+  #pnl-movimenti .tbl-box thead th:nth-child(3),
+  #pnl-movimenti .tbl-box thead th:nth-child(4),
+  #pnl-movimenti .tbl-box tbody td:nth-child(3),
+  #pnl-movimenti .tbl-box tbody td:nth-child(4){display:none !important}
+  #pnl-movimenti .tbl-box table{min-width:0 !important}
 
   /* MOVIMENTI KPI — 2x2 già coperto da .kpi-strip */
 

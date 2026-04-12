@@ -798,8 +798,7 @@ function backCat(){
 
 // ── MOVIMENTI ─────────────────────────────────────────────────────
 const _fM=document.getElementById("fMese"),_fC=document.getElementById("fCat");
-[...new Set(TXS.map(t=>t.ml))].forEach(m=>_fM.innerHTML+=`<option value="${m}">${m}</option>`);
-[...new Set(TXS.map(t=>t.cat))].sort().forEach(c=>_fC.innerHTML+=`<option value="${c}">${c}</option>`);
+// selectors populated in loadData() after TXS is loaded
 let mPie=null,mBar=null;
 let _lastFilteredRows=[];
 
@@ -957,9 +956,7 @@ const DEFAULT_BUDGETS={
 let budgets=JSON.parse(localStorage.getItem("spese_budgets")||JSON.stringify(DEFAULT_BUDGETS));
 let budgetChart=null;
 
-// populate mese selector
-MONTHLY.forEach(r=>document.getElementById("budgetMese").innerHTML+=`<option value="${r.mk}">${r.m}</option>`);
-document.getElementById("budgetMese").value=MONTHLY[MONTHLY.length-2].mk;
+// populate mese selector — called from loadData after MONTHLY is built
 
 function renderBudget(){
   const mk=document.getElementById("budgetMese").value;

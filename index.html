@@ -179,25 +179,115 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
 .pp-match{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:var(--r-sm);padding:10px 14px;font-size:12px;color:#1D4ED8;margin-bottom:14px}
 
 @media(max-width:768px){
+  /* ── LAYOUT ── */
   .sidebar{display:none}
-  .page{padding:12px 14px}
-  .topnav{padding:0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .topnav::-webkit-scrollbar{display:none}
-  .tnav{padding:0 9px;font-size:12px;white-space:nowrap;flex-shrink:0}
-  .tnav-right{display:none}
-  .kpi-strip{flex-wrap:wrap}
-  .kpi-cell{flex:1 1 48%;min-width:130px;border-right:none;border-bottom:1px solid var(--border)}
-  .kpi-cell:nth-child(odd){border-right:1px solid var(--border)}
-  .kpi-cell:last-child{border-bottom:none}
-  .kpi-num{font-size:18px}
-  .grid2,.ott-cards{grid-template-columns:1fr}
-  .page-title{font-size:20px;margin-bottom:12px}
-  .page-head{flex-direction:column;gap:8px;align-items:flex-start}
-  .tbl-box{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .tbl-box table{min-width:480px}
-  #uploadModal > div{width:95vw;padding:18px 14px}
-  .budget-row{flex-wrap:wrap;gap:5px}
-  .budget-bar-wrap{flex:1 1 100%;order:3}
+  .page{padding:0}
+  .topnav{display:none}
+
+  /* ── PANEL PADDING ── */
+  .panel{padding:14px 14px 0}
+
+  /* ── PAGE TITLE ── */
+  .page-title{font-size:20px;margin-bottom:14px}
+  .page-head{flex-direction:column;gap:8px;align-items:flex-start;margin-bottom:14px}
+
+  /* ── KPI STRIP — 2 colonne, numeri che non vanno a capo ── */
+  .kpi-strip{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    border-radius:10px;
+    margin-bottom:14px;
+  }
+  .kpi-cell{
+    padding:14px 12px;
+    border-right:none !important;
+    border-bottom:1px solid var(--border) !important;
+  }
+  .kpi-cell:nth-child(odd){border-right:1px solid var(--border) !important}
+  .kpi-cell:nth-last-child(1),.kpi-cell:nth-last-child(2){border-bottom:none !important}
+  .kpi-lbl{font-size:9px;letter-spacing:.08em;margin-bottom:3px}
+  .kpi-num{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .kpi-hint{font-size:10px;margin-top:2px}
+
+  /* ── CARDS ── */
+  .card{padding:14px 12px;margin-bottom:10px;border-radius:8px}
+  .card-title{font-size:9px;margin-bottom:10px}
+
+  /* ── GRID — sempre 1 colonna ── */
+  .grid2,.ott-cards{grid-template-columns:1fr;gap:10px}
+
+  /* ── GRAFICI — legenda sotto su mobile ── */
+  .card canvas{max-height:180px}
+
+  /* ── TABELLE — scroll orizzontale, niente min-width ── */
+  .tbl-box{border-radius:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:10px}
+  .tbl-box table{min-width:0;width:100%;font-size:12px}
+  .tbl-box thead th{padding:7px 10px;font-size:9px}
+  .tbl-box tbody td{padding:9px 10px}
+
+  /* ── NUM BADGES — no wrap ── */
+  .num-red,.num-green{white-space:nowrap;font-size:11px;padding:2px 6px}
+
+  /* ── TOOLBAR MOVIMENTI ── */
+  .toolbar{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+  .toolbar input{grid-column:1/-1}
+  .toolbar select,.toolbar input{height:38px;font-size:13px;border-radius:8px}
+
+  /* ── CHIPS ── */
+  .chips{gap:4px;margin-bottom:8px}
+  .chip{font-size:11px;padding:3px 8px}
+
+  /* ── INFO NOTE ── */
+  .info{font-size:11px;padding:8px 10px;margin-bottom:10px;border-radius:7px}
+
+  /* ── TREND BADGES ── */
+  #trendStrip{gap:5px;margin-bottom:12px}
+  #trendStrip .bdg{font-size:10px;padding:3px 7px}
+
+  /* ── CATEGORIE TABLE — nascondi colonne extra ── */
+  #tbCat tr td:nth-child(3),
+  #tbCat tr td:nth-child(4),
+  #tbCat thead th:nth-child(3),
+  #tbCat thead th:nth-child(4){display:none}
+
+  /* ── MOVIMENTI TABLE — nascondi dettagli ── */
+  #tbMov tr td:nth-child(3),
+  #tbMov thead th:nth-child(3){display:none}
+
+  /* ── BUDGET ROWS ── */
+  .budget-row{flex-wrap:wrap;gap:4px;padding:10px 0}
+  .budget-cat{flex:1 1 100%;font-size:13px}
+  .budget-bar-wrap{flex:1 1 60%;height:5px}
+  .budget-nums{font-size:11px;white-space:nowrap}
+  .budget-input{width:70px;height:24px;font-size:12px}
+
+  /* ── OTT CARDS — full width ── */
+  .ott-card{padding:14px 12px;margin-bottom:0}
+  .oc-name{font-size:13px}
+  .oc-amount{font-size:16px}
+  .oc-insight{font-size:11px;padding:8px 10px}
+  .oc-row{font-size:11px}
+
+  /* ── MONTH PILLS ── */
+  .mpills{gap:5px}
+  .mpill{font-size:11px;padding:4px 10px}
+
+  /* ── UPLOAD MODAL ── */
+  #uploadModal > div{width:96vw;padding:20px 16px;border-radius:12px}
+
+  /* ── RICORRENTI ── */
+  #ricCards > div{grid-template-columns:1fr !important}
+  .ric-card{padding:12px 14px}
+  .ric-name{font-size:12px}
+
+  /* ── PIANO ITEM ── */
+  .piano-item{gap:10px;padding:10px 0}
+  .piano-body h4{font-size:12px}
+  .piano-body p{font-size:11px}
+  .piano-time{font-size:10px}
+
+  /* ── CONFRONTO ── */
+  #cBody .card{padding:12px}
 }
 
 /* MOBILE BOTTOM NAV */
@@ -871,7 +961,7 @@ if(_cPie)_cPie.destroy();
 _cPie=new Chart(document.getElementById("cPie"),{type:"doughnut",data:{
   labels:allC.map(r=>r[0].length>22?r[0].slice(0,20)+"…":r[0]),
   datasets:[{data:allC.map(r=>r[1].toFixed(2)),backgroundColor:PAL,borderWidth:2,borderColor:"#fff"}]},
-  options:{...chopt,plugins:{legend:{position:"right",labels:{font:{size:11},boxWidth:10,padding:5}},
+  options:{...chopt,plugins:{legend:{position:window.innerWidth<768?"bottom":"right",labels:{font:{size:10},boxWidth:9,padding:5}},
     tooltip:{callbacks:{label:ctx=>" "+fv(+ctx.parsed)}}},
     onClick:(e,els)=>{if(els.length)goMov(allC[els[0].index][0],"");}}
 });

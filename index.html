@@ -648,9 +648,11 @@ function buildTrend(){
     return `<span class="bdg ${cls}">${ico} ${it.lbl}: ${it.pct>0?"+":""}${it.pct}%</span>`;
   }).join("");
 }
+let _cDash=null,_cPie=null,_cSaldo=null;
 function _initPanCharts(){
 // ── PANORAMICA CHARTS ─────────────────────────────────────────────
-new Chart(document.getElementById("cDash"),{type:"bar",data:{
+if(_cDash)_cDash.destroy();
+_cDash=new Chart(document.getElementById("cDash"),{type:"bar",data:{
   labels:MONTHLY.map(r=>r.m),
   datasets:[
     {label:"Entrate",data:MONTHLY.map(r=>r.e),backgroundColor:"rgba(22,163,74,.2)",borderColor:"#16A34A",borderWidth:1.5},
@@ -660,14 +662,16 @@ new Chart(document.getElementById("cDash"),{type:"bar",data:{
     scales:{x:{ticks:{font:{size:10},autoSkip:false,maxRotation:45}},y:{ticks:{callback:v=>"€"+Math.round(v/1000)+"k"}}}}
 });
 const allC=catMap(TXS).slice(0,8);
-new Chart(document.getElementById("cPie"),{type:"doughnut",data:{
+if(_cPie)_cPie.destroy();
+_cPie=new Chart(document.getElementById("cPie"),{type:"doughnut",data:{
   labels:allC.map(r=>r[0].length>22?r[0].slice(0,20)+"…":r[0]),
   datasets:[{data:allC.map(r=>r[1].toFixed(2)),backgroundColor:PAL,borderWidth:2,borderColor:"#fff"}]},
   options:{...chopt,plugins:{legend:{position:"right",labels:{font:{size:11},boxWidth:10,padding:5}},
     tooltip:{callbacks:{label:ctx=>" "+fv(+ctx.parsed)}}},
     onClick:(e,els)=>{if(els.length)goMov(allC[els[0].index][0],"");}}
 });
-new Chart(document.getElementById("cSaldo"),{type:"bar",data:{
+if(_cSaldo)_cSaldo.destroy();
+_cSaldo=new Chart(document.getElementById("cSaldo"),{type:"bar",data:{
   labels:MONTHLY.map(r=>r.m),
   datasets:[{data:MONTHLY.map(r=>r.s),backgroundColor:MONTHLY.map(r=>r.s>=0?"rgba(22,163,74,.55)":"rgba(220,38,38,.55)"),borderRadius:3}]},
   options:{...chopt,scales:{x:{ticks:{font:{size:10},autoSkip:false,maxRotation:45}},y:{ticks:{callback:v=>"€"+Math.round(v)}}}}
@@ -715,8 +719,10 @@ function showMensDet(mk,label){
       onClick:(e,els)=>{if(els.length)goMov(top[els[0].index][0],label);}}
   });
 }
+let _cMensTrend=null;
 function _initMensTrend(){
-new Chart(document.getElementById("cMensTrend"),{type:"line",data:{
+if(_cMensTrend)_cMensTrend.destroy();
+_cMensTrend=new Chart(document.getElementById("cMensTrend"),{type:"line",data:{
   labels:MONTHLY.map(r=>r.m),
   datasets:[
     {label:"Entrate",data:MONTHLY.map(r=>r.e),borderColor:"#16A34A",backgroundColor:"rgba(22,163,74,.06)",fill:true,tension:.3,pointRadius:3},

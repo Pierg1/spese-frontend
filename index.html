@@ -113,12 +113,20 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
 
 /* CONFRONTO TABLE — scroll orizzontale */
 #tCmp{min-width:800px}
-#tCmp th,#tCmp td{white-space:nowrap;padding:8px 12px}
+#tCmp th,#tCmp td{white-space:nowrap;padding:8px 12px;font-size:12px}
 #tCmp thead th:first-child,#tCmp tbody td:first-child{
   position:sticky;left:0;background:var(--surface);z-index:1;
   border-right:1px solid var(--border);font-weight:600;
 }
 .cmp-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r)}
+.cmp-mobile{display:none}
+/* Mobile confronto cards */
+.cmp-mcard{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px}
+.cmp-mcard-title{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
+.cmp-mrow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
+.cmp-mrow:last-child{border-bottom:none}
+.cmp-mlabel{font-size:12px;color:var(--text2)}
+.cmp-mval{font-size:13px;font-weight:600}
 
 /* BACK LINK */
 .back{display:inline-flex;align-items:center;gap:5px;margin-bottom:14px;font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;background:none;border:none;font-family:inherit;padding:0}
@@ -315,14 +323,27 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
 
   /* CONFRONTO TABLE — scroll orizzontale */
 #tCmp{min-width:800px}
-#tCmp th,#tCmp td{white-space:nowrap;padding:8px 12px}
+#tCmp th,#tCmp td{white-space:nowrap;padding:8px 12px;font-size:12px}
 #tCmp thead th:first-child,#tCmp tbody td:first-child{
   position:sticky;left:0;background:var(--surface);z-index:1;
   border-right:1px solid var(--border);font-weight:600;
 }
 .cmp-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r)}
+.cmp-mobile{display:none}
+/* Mobile confronto cards */
+.cmp-mcard{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px}
+.cmp-mcard-title{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
+.cmp-mrow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
+.cmp-mrow:last-child{border-bottom:none}
+.cmp-mlabel{font-size:12px;color:var(--text2)}
+.cmp-mval{font-size:13px;font-weight:600}
 
 /* BACK LINK */
+
+  /* CONFRONTO mobile — cards verticali */
+  .cmp-desktop{display:none !important}
+  .cmp-mobile{display:block !important}
+  #pnl-confronto .grid2{grid-template-columns:1fr !important}
   .back{margin-bottom:10px !important}
   .drill-h{font-size:18px !important}
 
@@ -605,7 +626,10 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
       <div class="card" style="margin-bottom:0"><div class="card-title">Saldo netto</div><div style="position:relative;height:230px"><canvas id="cCmpSaldo"></canvas></div></div>
     </div>
     <div class="card" style="margin-bottom:12px"><div class="card-title">Categorie a confronto</div><div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><div id="cmpCatWrap" style="position:relative;height:280px;min-width:600px"><canvas id="cCmpCat"></canvas></div></div></div>
-    <div class="cmp-scroll"><table id="tCmp"></table></div>
+    <!-- Desktop: tabella orizzontale -->
+    <div class="cmp-scroll cmp-desktop"><table id="tCmp"></table></div>
+    <!-- Mobile: cards verticali -->
+    <div class="cmp-mobile" id="cmpMobile"></div>
   </div>
 </div>
 
@@ -1365,6 +1389,21 @@ function renderC(){
     tRows+="<tr><td style=\"font-size:12px\">"+cat+"</td>"+cells+varCell+"</tr>";
   });
   document.getElementById("tCmp").innerHTML="<thead><tr><th>Voce</th>"+hcols2+varCol+"</tr></thead><tbody>"+tRows+"</tbody>";
+  // Mobile: cards per mese
+  const mobileCards=sel.map((r,i)=>{
+    const catRows=topC.map(cat=>{
+      const v=TXS.filter(t=>t.mk===r.mk&&t.imp<0&&t.cat===cat).reduce((s,t)=>s+Math.abs(t.imp),0);
+      return v?`<div class="cmp-mrow"><span class="cmp-mlabel">${cat}</span><span class="cmp-mval neg">${fv(v)}</span></div>`:"";
+    }).filter(Boolean).join("");
+    return `<div class="cmp-mcard">
+      <div class="cmp-mcard-title" style="color:${col[i]}">${r.m}</div>
+      <div class="cmp-mrow"><span class="cmp-mlabel">Entrate</span><span class="cmp-mval pos">${fs(r.e)}</span></div>
+      <div class="cmp-mrow"><span class="cmp-mlabel">Uscite</span><span class="cmp-mval neg">${fv(r.u)}</span></div>
+      <div class="cmp-mrow" style="background:var(--bg);margin:4px -14px;padding:6px 14px"><span class="cmp-mlabel" style="font-weight:700">Saldo</span><span class="cmp-mval ${r.s>=0?"pos":"neg"}">${fs(r.s)}</span></div>
+      ${catRows}
+    </div>`;
+  }).join("");
+  document.getElementById("cmpMobile").innerHTML=mobileCards||"";
 }
 // ── BUDGET ─────────────────────────────────────────────────────────
 const DEFAULT_BUDGETS={

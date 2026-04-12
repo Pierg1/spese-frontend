@@ -377,6 +377,12 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
   margin-top:8px;min-height:18px;
 }
 </style>
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExNSIgZmlsbD0iIzBBMEEwQSIvPgogIDx0ZXh0IHg9IjI1NiIgeT0iMzcwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iSW50ZXIsc3lzdGVtLXVpLHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI4MDAiIGZvbnQtc2l6ZT0iMzQwIiBmaWxsPSIjZmZmZmZmIj5TPC90ZXh0Pgo8L3N2Zz4=">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExNSIgZmlsbD0iIzBBMEEwQSIvPgogIDx0ZXh0IHg9IjI1NiIgeT0iMzcwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iSW50ZXIsc3lzdGVtLXVpLHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI4MDAiIGZvbnQtc2l6ZT0iMzQwIiBmaWxsPSIjZmZmZmZmIj5TPC90ZXh0Pgo8L3N2Zz4=">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Spese">
+<meta name="theme-color" content="#ffffff">
 </head>
 <body>
 
@@ -1349,11 +1355,22 @@ function saveBudgets(){
   setTimeout(()=>{btn.textContent="Salva budget";btn.style.background="";},1500);
 }
 // ── RICORRENTI AUTO-DETECT ─────────────────────────────────────────
+function normalizeOp(op){
+  return op
+    .toLowerCase()
+    .replace(/bonifico istantaneo da voi disposto a favore di/gi,"bonifico a favore di")
+    .replace(/bonifico disposto a favore di/gi,"bonifico a favore di")
+    .replace(/addebito diretto disposto a favore di/gi,"addebito a favore di")
+    .replace(/pagamento con carta \*+[0-9]+/gi,"pagamento carta")
+    .replace(/\b(cod\.?\s*disp\.?\s*\S+|nome\s+\S+)/gi,"")
+    .replace(/[0-9]{4,}/g,"#")
+    .replace(/\s+/g," ").trim().slice(0,60);
+}
 function buildRicorrenti(){
   // Group by normalized operation name
   const groups={};
   TXS.filter(t=>t.imp<0).forEach(t=>{
-    const key=t.op.replace(/[0-9]{6,}/g,"#").replace(/\s+/g," ").trim().slice(0,60);
+    const key=normalizeOp(t.op);
     if(!groups[key])groups[key]={name:t.op,key,amounts:[],months:new Set(),total:0};
     groups[key].amounts.push(Math.abs(t.imp));
     groups[key].months.add(t.mk);

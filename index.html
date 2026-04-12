@@ -672,7 +672,10 @@ new Chart(document.getElementById("cSaldo"),{type:"bar",data:{
 // ── MENSILE ───────────────────────────────────────────────────────
 let mensC=null,selRow=null;
 function buildMensile(){
+  if(!MONTHLY.length) return;
   const tb=document.getElementById("tbMensile");
+  tb.innerHTML="";
+  selRow=null;
   MONTHLY.forEach(r=>{
     const n=TXS.filter(t=>t.mk===r.mk).length;
     const pct=r.e>0?((r.s/r.e)*100).toFixed(1)+"%":"—";
@@ -692,7 +695,7 @@ function buildMensile(){
   });
   const rows=tb.querySelectorAll("tr");
   if(rows.length>1)rows[rows.length-2].click();
-})();
+}
 
 function var_bg(){return "#FAFAFA"}
 
@@ -721,9 +724,12 @@ new Chart(document.getElementById("cMensTrend"),{type:"line",data:{
 
 // ── CATEGORIE ─────────────────────────────────────────────────────
 let drillC=null,drillTxs=[];
-const allCatFull=catMap(TXS);
+let catBarChart=null;
 function buildCat(){
+  if(!TXS.length) return;
+  const allCatFull=catMap(TXS);
   const tb=document.getElementById("tbCat");
+  tb.innerHTML="";
   allCatFull.forEach(([cat,tot])=>{
     const n=TXS.filter(t=>t.imp<0&&t.cat===cat).length;
     const tr=document.createElement("tr");
@@ -736,7 +742,8 @@ function buildCat(){
     tb.appendChild(tr);
   });
   const top10=allCatFull.slice(0,10);
-  new Chart(document.getElementById("cCatBar"),{type:"bar",data:{
+  if(catBarChart)catBarChart.destroy();
+  catBarChart=new Chart(document.getElementById("cCatBar"),{type:"bar",data:{
     labels:top10.map(r=>r[0].length>20?r[0].slice(0,18)+"…":r[0]),
     datasets:[{data:top10.map(r=>r[1].toFixed(2)),backgroundColor:PAL,borderRadius:3}]},
     options:{...chopt,indexAxis:"y",

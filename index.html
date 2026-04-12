@@ -1383,7 +1383,7 @@ function renderC(){
       <div class="cmp-mcard-title" style="color:${col[i]}">${r.m}</div>
       <div class="cmp-mrow"><span class="cmp-mlabel">Entrate</span><span class="cmp-mval pos">${fs(r.e)}</span></div>
       <div class="cmp-mrow"><span class="cmp-mlabel">Uscite</span><span class="cmp-mval neg">${fv(r.u)}</span></div>
-      <div class="cmp-mrow" style="background:var(--bg);margin:4px -14px;padding:6px 14px"><span class="cmp-mlabel" style="font-weight:700">Saldo</span><span class="cmp-mval ${r.s>=0?"pos":"neg"}">${fs(r.s)}</span></div>
+      <div class="cmp-mrow"><span class="cmp-mlabel" style="font-weight:700">Saldo</span><span class="cmp-mval ${r.s>=0?"pos":"neg"}">${fs(r.s)}</span></div>
       ${catRows}
     </div>`;
   }).join("");

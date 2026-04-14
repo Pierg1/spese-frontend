@@ -1594,61 +1594,141 @@ function buildRicorrenti(){
 }
 
 function buildOttimizzazioni(){
-// ── OTTIMIZZAZIONI ─────────────────────────────────────────────────
-const OTT=[
-  {cat:"Domiciliazioni e Utenze",tot:11873,n:103,tipo:"riducibile",
-   insight:"€5.168 via PayPal in 58 addebiti. Vai su PayPal > Pagamenti automatici e cancella quelli non usati.",
-   save:"€50–200/mese",ms:[{n:"PayPal (vari)",t:5168,c:58},{n:"INARCASSA",t:3894,c:3},{n:"MFM Investment LTD",t:1300,c:13}]},
-  {cat:"Ristoranti e bar",tot:3804,n:156,tipo:"riducibile",
-   insight:"Una uscita ogni 2,5 giorni. Deliveroo €362 in 15 ordini. Birreria Pisani + Crak Taproom = €633.",
-   save:"€80–150/mese",ms:[{n:"Deliveroo",t:362,c:15},{n:"Birreria Pisani",t:356,c:15},{n:"Crak Taproom",t:278,c:16}]},
-  {cat:"Tempo libero varie",tot:2947,n:47,tipo:"riducibile",
-   insight:"Quasi tutto Amazon. Acquisti spesso impulsivi. Regola 48h: aggiungi al carrello, aspetta, poi decidi.",
-   save:"€50–120/mese",ms:[{n:"Amazon (vari)",t:2947,c:47}]},
-  {cat:"Prelievi contante",tot:3030,n:15,tipo:"riducibile",
-   insight:"€3.030 non tracciabili. Usare la carta ovunque migliora la visibilita e il controllo.",
-   save:"Visibilita migliorata",ms:[{n:"Prelievo BANCOMAT",t:2160,c:12}]},
-  {cat:"Generi alimentari",tot:3188,n:97,tipo:"necessario",
-   insight:"Supermercato Lando copre il 69%. Spesa nella norma.",
-   save:"€20–40/mese",ms:[{n:"Supermercato Lando",t:2202,c:59}]},
-  {cat:"Carburanti",tot:1961,n:29,tipo:"fisso",
-   insight:"Media €68/pieno, 2x/mese. Gia fedele a Vega Vigonza.",
-   save:"€10–20/mese",ms:[{n:"Vega Carburanti",t:1143,c:17}]},
-  {cat:"Spese mediche",tot:1860,n:9,tipo:"fisso",
-   insight:"€1.622 per sedute terapia. Spesa necessaria.",
-   save:"Non ottimizzabile",ms:[{n:"Camilla Lico",t:1622,c:6}]},
-  {cat:"Hi-tech e informatica",tot:3257,n:10,tipo:"riducibile",
-   insight:"€2.844 Apple (MacBook one-shot). Claude.ai €344/anno. GitHub €27/anno.",
-   save:"Abbonamenti attivi",ms:[{n:"Apple.com",t:2844,c:2},{n:"Claude.ai",t:344,c:4}]},
-];
-document.getElementById("ottCards").innerHTML=OTT.map(o=>`
+  if(!TXS.length) return;
+
+  // ── Calcola totali reali per categoria ─────────────────────────
+  const uscite = TXS.filter(t=>t.imp<0);
+  const nMesi = MONTHLY.length || 13;
+
+  // Group by category
+  const catData = {};
+  uscite.forEach(t=>{
+    const c = t.cat||"Altre uscite";
+    if(!catData[c]) catData[c]={tot:0,txs:[],merchants:{}};
+    catData[c].tot += Math.abs(t.imp);
+    catData[c].txs.push(t);
+    const merch = t.op.split(" ").slice(0,3).join(" ");
+    catData[c].merchants[merch] = (catData[c].merchants[merch]||0) + Math.abs(t.imp);
+  });
+
+  // For each category, detect recurring vs one-time transactions
+  const catCards = Object.entries(catData)
+    .filter(([,d])=>d.tot>50)
+    .sort((a,b)=>b[1].tot-a[1].tot)
+    .slice(0,10)
+    .map(([cat,d])=>{
+      const txs = d.txs;
+      const n = txs.length;
+      const tot = d.tot;
+      const avg = tot/nMesi;
+
+      // Split recurring (3+ months) vs one-time
+      const byMerch = {};
+      txs.forEach(t=>{
+        const key = t.op.trim();
+        if(!byMerch[key]) byMerch[key]={imp:0,cnt:0,months:new Set()};
+        byMerch[key].imp += Math.abs(t.imp);
+        byMerch[key].cnt++;
+        byMerch[key].months.add(t.mk);
+      });
+
+      const recurring = Object.entries(byMerch).filter(([,v])=>v.months.size>=3);
+      const oneTime = Object.entries(byMerch).filter(([,v])=>v.months.size<3&&v.imp>100);
+
+      const recurringTotal = recurring.reduce((s,[,v])=>s+v.imp,0);
+      const oneTimeTotal = oneTime.reduce((s,[,v])=>s+v.imp,0);
+
+      // Classify type
+      const FIXED_CATS = ["Pagamento affitti","Carburanti","Assicurazioni","Spese mediche","Abbonamenti"];
+      const NEEDED_CATS = ["Generi alimentari e supermercato","Generi alimentari","Farmacia","Spese bancarie"];
+      let tipo = "riducibile";
+      if(FIXED_CATS.some(f=>cat.toLowerCase().includes(f.toLowerCase()))) tipo="fisso";
+      if(NEEDED_CATS.some(f=>cat.toLowerCase().includes(f.toLowerCase()))) tipo="necessario";
+      if(cat==="Bonifici in uscita") tipo="fisso";
+
+      // Build insight
+      let insight = "";
+      let save = "";
+
+      if(oneTimeTotal > recurringTotal * 0.5 && oneTimeTotal > 200){
+        const oneTimeItems = oneTime.slice(0,3).map(([k,v])=>`${k.slice(0,25)} €${fv(v.imp)}`).join(", ");
+        insight = `€${fv(oneTimeTotal)} sono acquisti una tantum (${oneTimeItems}). `;
+        if(recurringTotal>0) insight += `€${fv(recurringTotal)} ricorrenti su ${recurring.length} merchant.`;
+        save = recurringTotal>50 ? `€${Math.round(recurringTotal/nMesi*0.3)}-${Math.round(recurringTotal/nMesi*0.5)}/mese` : "Acquisti puntuali";
+        tipo = tipo==="riducibile" && oneTimeTotal>recurringTotal ? "necessario" : tipo;
+      } else if(tipo==="riducibile"){
+        const top3 = Object.entries(byMerch).sort((a,b)=>b[1].imp-a[1].imp).slice(0,3);
+        insight = top3.map(([k,v])=>`${k.slice(0,20)} €${fv(v.imp)} (${v.cnt}x)`).join(" · ");
+        save = `€${Math.round(avg*0.2)}-${Math.round(avg*0.35)}/mese`;
+      } else if(tipo==="fisso"){
+        insight = `Spesa fissa. Media €${fv(avg)}/mese su ${n} operazioni.`;
+        save = "Non ottimizzabile";
+      } else {
+        insight = `Spesa necessaria. Media €${fv(avg)}/mese.`;
+        save = `€${Math.round(avg*0.1)}-${Math.round(avg*0.15)}/mese`;
+      }
+
+      // Top merchants for display
+      const ms = Object.entries(byMerch)
+        .sort((a,b)=>b[1].imp-a[1].imp)
+        .slice(0,3)
+        .map(([k,v])=>({n:k.slice(0,30),t:Math.round(v.imp),c:v.cnt,recurring:v.months.size>=3}));
+
+      return {cat,tot,n,avg,tipo,insight,save,ms,oneTimeTotal,recurringTotal};
+    });
+
+  // Render cards
+  document.getElementById("ottCards").innerHTML=catCards.map(o=>`
   <div class="ott-card ${o.tipo}">
     <div class="oc-head">
-      <div><div class="oc-name">${o.cat}</div><div class="oc-tipo">${o.tipo==="riducibile"?"Riducibile":o.tipo==="fisso"?"Fisso":"Necessario"} · ${o.n} op.</div></div>
-      <div><div class="oc-amount">${fv(o.tot)}</div><div class="oc-avg">${fv(o.tot/13)}/mese</div></div>
+      <div>
+        <div class="oc-name">${o.cat}</div>
+        <div class="oc-tipo">${o.tipo==="riducibile"?"Riducibile":o.tipo==="fisso"?"Fisso":"Necessario"} · ${o.n} op.</div>
+      </div>
+      <div>
+        <div class="oc-amount">${fv(o.tot)}</div>
+        <div class="oc-avg">${fv(o.avg)}/mese</div>
+      </div>
     </div>
     <div class="oc-insight">${o.insight}</div>
-    <div class="oc-rows">${o.ms.map(m=>`<div class="oc-row"><span>${m.n}</span><span>${fv(m.t)} ×${m.c}</span></div>`).join("")}</div>
-    <div class="oc-foot"><span class="oc-save">${o.save}</span>
-      <button class="btn btn-sm" onclick="goMov('${o.cat.replace(/'/g,"\'")}',' ')">→</button></div>
+    <div class="oc-rows">${o.ms.map(m=>`
+      <div class="oc-row">
+        <span>${m.n}${m.recurring?" <span style=\'font-size:9px;color:var(--text3)\'>↺</span>":""}</span>
+        <span>${fv(m.t)} ×${m.c}</span>
+      </div>`).join("")}</div>
+    <div class="oc-foot">
+      <span class="oc-save">${o.save}</span>
+      <button class="btn btn-sm" onclick="goMov('${o.cat.replace(/'/g,"\'")}','')">→</button>
+    </div>
   </div>`).join("");
 
-new Chart(document.getElementById("cOttBar"),{type:"bar",data:{
-  labels:OTT.map(o=>o.cat.length>16?o.cat.slice(0,14)+"…":o.cat),
-  datasets:[{label:"Media mensile",data:OTT.map(o=>+(o.tot/13).toFixed(0)),
-    backgroundColor:OTT.map(o=>o.tipo==="riducibile"?"#1E3A5F":"#D1D5DB"),borderRadius:3}]},
-  options:{...chopt,scales:{x:{ticks:{font:{size:10}}},y:{ticks:{callback:v=>"€"+v}}}}});
+  // Chart
+  if(window._cOttBar) window._cOttBar.destroy();
+  window._cOttBar = new Chart(document.getElementById("cOttBar"),{type:"bar",data:{
+    labels:catCards.map(o=>o.cat.length>16?o.cat.slice(0,14)+"…":o.cat),
+    datasets:[{
+      label:"Totale periodo",
+      data:catCards.map(o=>o.tot.toFixed(0)),
+      backgroundColor:catCards.map(o=>o.tipo==="riducibile"?"#1E3A5F":"#D1D5DB"),
+      borderRadius:3
+    }]},
+    options:{...chopt,scales:{x:{ticks:{font:{size:10}}},y:{ticks:{callback:v=>"€"+Math.round(v).toLocaleString("it-IT")}}}}
+  });
 
-const PIANO=[
-  {dot:"#DC2626",t:"PayPal audit",d:"Apri PayPal > Pagamenti automatici. Cancella ogni abbonamento non riconosciuto. Potenziale: €50–200/mese.",tm:"15 min"},
-  {dot:"#DC2626",t:"MFM Investment LTD",d:"€100/mese per 13 mesi consecutivi. Identifica e valuta se cancellare.",tm:"5 min"},
-  {dot:"#D97706",t:"Deliveroo -50%",d:"Da 15 ordini (€362) a 1 ogni 2 settimane. Risparmio: €15–20/mese.",tm:"Abitudine"},
-  {dot:"#D97706",t:"Amazon regola 48h",d:"Aggiungi al carrello, aspetta 2 giorni. Risparmio stimato: €50–80/mese.",tm:"Abitudine"},
-  {dot:"#16A34A",t:"Uscite serali -2/mese",d:"Pisani + Crak = €633 in 31 uscite. -2 uscite = €40–50 risparmio.",tm:"Abitudine"},
-  {dot:"#16A34A",t:"Pagamenti con carta",d:"€3.030 in contante non tracciato. Carta ovunque = visibilita completa.",tm:"Abitudine"},
-  {dot:"#2563EB",t:"Audit abbonamenti trimestrale",d:"Ogni 3 mesi: PayPal, App Store, Play Store. Gli abbonamenti si accumulano.",tm:"30 min/trim"},
-];
-document.getElementById("ottPiano").innerHTML=PIANO.map(p=>`
+  // Piano d'azione dinamico basato sui dati reali
+  const piano = [];
+  catCards.filter(o=>o.tipo==="riducibile").slice(0,4).forEach(o=>{
+    const topM = o.ms[0];
+    if(topM) piano.push({
+      dot: o.tot>3000?"#DC2626":o.tot>1000?"#D97706":"#16A34A",
+      t: o.cat,
+      d: o.insight + (o.save&&o.save!=="Acquisti puntuali"?" Potenziale risparmio: "+o.save+".":""),
+      tm: o.tipo==="riducibile"?"Azione":"—"
+    });
+  });
+  piano.push({dot:"#2563EB",t:"Audit abbonamenti trimestrale",d:"Ogni 3 mesi: PayPal, App Store, Play Store. Gli abbonamenti si accumulano silenziosamente.",tm:"30 min/trim"});
+
+  document.getElementById("ottPiano").innerHTML=piano.map(p=>`
   <div class="piano-item">
     <div class="piano-dot" style="background:${p.dot}"></div>
     <div class="piano-body"><h4>${p.t}</h4><p>${p.d}</p></div>

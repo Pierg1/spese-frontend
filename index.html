@@ -651,15 +651,31 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
 
 <!-- OTTIMIZZAZIONI -->
 <div id="pnl-ottimizzazioni" class="panel">
-  <div class="page-title">Ottimizzazioni</div>
-  <div class="kpi-strip" style="margin-bottom:18px">
-    <div class="kpi-cell"><div class="kpi-lbl">Spese fisse/mese</div><div class="kpi-num red">€ 905</div><div class="kpi-hint">affitto+mutuo+prev.</div></div>
-    <div class="kpi-cell"><div class="kpi-lbl">Discrezionali/mese</div><div class="kpi-num">€ 750</div><div class="kpi-hint">media 13 mesi</div></div>
-    <div class="kpi-cell"><div class="kpi-lbl">Risparmio potenziale</div><div class="kpi-num green">€ 250–400</div><div class="kpi-hint">stima mensile</div></div>
-    <div class="kpi-cell"><div class="kpi-lbl">Risparmio annuo</div><div class="kpi-num blue">€ 3.000–5.000</div><div class="kpi-hint">senza stravolgere</div></div>
+  <div class="page-head">
+    <div class="page-title">Ottimizzazioni</div>
+    <button class="btn" id="btnAnalizzaAI" onclick="analizzaConAI()" style="display:flex;align-items:center;gap:6px;background:var(--text);color:#fff">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      Analizza con AI
+    </button>
+  </div>
+  <div class="kpi-strip" id="ottKpi" style="margin-bottom:18px">
+    <div class="kpi-cell"><div class="kpi-lbl">Spese fisse/mese</div><div class="kpi-num red" id="ottKpiFisse">—</div></div>
+    <div class="kpi-cell"><div class="kpi-lbl">Discrezionali/mese</div><div class="kpi-num" id="ottKpiDisc">—</div></div>
+    <div class="kpi-cell"><div class="kpi-lbl">Categorie riducibili</div><div class="kpi-num blue" id="ottKpiRid">—</div></div>
+    <div class="kpi-cell"><div class="kpi-lbl">Risparmio stimato</div><div class="kpi-num green" id="ottKpiSave">—</div></div>
+  </div>
+  <!-- AI Analysis box -->
+  <div id="aiAnalysisBox" style="display:none;margin-bottom:16px">
+    <div class="card" style="border-left:3px solid var(--text)">
+      <div class="card-title" style="display:flex;align-items:center;gap:6px">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        Analisi AI
+      </div>
+      <div id="aiAnalysisContent" style="font-size:13px;line-height:1.7;color:var(--text2)"></div>
+    </div>
   </div>
   <div class="ott-cards" id="ottCards"></div>
-  <div class="card" style="margin-bottom:16px"><div class="card-title">Spesa media mensile per categoria</div><div style="position:relative;height:250px"><canvas id="cOttBar"></canvas></div></div>
+  <div class="card" style="margin-bottom:16px"><div class="card-title">Spesa per categoria</div><div style="position:relative;height:250px"><canvas id="cOttBar"></canvas></div></div>
   <div class="card" style="margin-bottom:16px"><div class="card-title">Piano d'azione</div><div id="ottPiano"></div></div>
 </div>
 
@@ -862,6 +878,97 @@ function checkLogin(){
     setTimeout(()=>err.textContent="",2000);
   }
 }
+function analizzaConAI(){
+  if(!TXS.length){alert("Carica prima i movimenti.");return;}
+  const btn=document.getElementById("btnAnalizzaAI");
+  const box=document.getElementById("aiAnalysisBox");
+  const out=document.getElementById("aiAnalysisContent");
+  btn.disabled=true;
+  btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/></svg> Analisi in corso...';
+  box.style.display="block";
+  out.innerHTML='<span style="color:var(--text3)">Elaborazione dati...</span>';
+
+  // Build summary for AI
+  const nMesi=MONTHLY.length;
+  const totEntrate=TXS.filter(t=>t.imp>0).reduce((s,t)=>s+t.imp,0);
+  const totUscite=TXS.filter(t=>t.imp<0).reduce((s,t)=>s+Math.abs(t.imp),0);
+  const saldo=totEntrate-totUscite;
+
+  // Category breakdown
+  const catTot={};
+  TXS.filter(t=>t.imp<0).forEach(t=>{
+    const c=t.cat||"Altre";
+    catTot[c]=(catTot[c]||0)+Math.abs(t.imp);
+  });
+  const catSorted=Object.entries(catTot).sort((a,b)=>b[1]-a[1]).slice(0,12);
+
+  // Top merchants
+  const merchTot={};
+  TXS.filter(t=>t.imp<0).forEach(t=>{
+    const m=t.op.trim().slice(0,30);
+    if(!merchTot[m]) merchTot[m]={tot:0,cnt:0,months:new Set()};
+    merchTot[m].tot+=Math.abs(t.imp);
+    merchTot[m].cnt++;
+    merchTot[m].months.add(t.mk);
+  });
+  const topMerch=Object.entries(merchTot).sort((a,b)=>b[1].tot-a[1].tot).slice(0,10);
+
+  // One-time vs recurring
+  const oneTime=topMerch.filter(([,v])=>v.months.size<=2&&v.tot>200);
+  const recurring=topMerch.filter(([,v])=>v.months.size>=3);
+
+  const prompt=`Sei un consulente finanziario personale. Analizza queste spese di ${nMesi} mesi e dai consigli pratici e specifici in italiano.
+
+RIEPILOGO:
+- Entrate totali: €${totEntrate.toFixed(0)}
+- Uscite totali: €${totUscite.toFixed(0)}
+- Saldo: €${saldo.toFixed(0)}
+- Media mensile uscite: €${(totUscite/nMesi).toFixed(0)}
+
+CATEGORIE DI SPESA (totale periodo):
+${catSorted.map(([c,t])=>`- ${c}: €${t.toFixed(0)} (€${(t/nMesi).toFixed(0)}/mese)`).join("\n")}
+
+TOP MERCHANT RICORRENTI (3+ mesi):
+${recurring.slice(0,6).map(([n,v])=>`- ${n}: €${v.tot.toFixed(0)} totale, ${v.cnt} transazioni, ${v.months.size} mesi`).join("\n")}
+
+ACQUISTI UNA TANTUM (importo >€200):
+${oneTime.map(([n,v])=>`- ${n}: €${v.tot.toFixed(0)}`).join("\n")||"Nessuno rilevante"}
+
+Fornisci:
+1. Una valutazione generale del profilo di spesa (2-3 frasi)
+2. Le 3 opportunità di risparmio più concrete con importi stimati
+3. Un consiglio su eventuali acquisti una tantum
+4. Un suggerimento su come migliorare il tasso di risparmio attuale
+
+Sii diretto, specifico con i numeri reali, e pratico. Massimo 250 parole.`;
+
+  fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      model:"claude-sonnet-4-20250514",
+      max_tokens:600,
+      messages:[{role:"user",content:prompt}]
+    })
+  })
+  .then(r=>r.json())
+  .then(data=>{
+    const text=data.content?.[0]?.text||"Errore nella risposta AI.";
+    // Format with paragraphs
+    out.innerHTML=text.split("\n").filter(l=>l.trim()).map(l=>{
+      if(l.match(/^\d+\./)||l.match(/^[•\-]/)) return `<div style="margin:6px 0;padding-left:12px">${l}</div>`;
+      return `<p style="margin:6px 0">${l}</p>`;
+    }).join("");
+    btn.disabled=false;
+    btn.innerHTML='<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> Rianalizza';
+  })
+  .catch(e=>{
+    out.innerHTML=`<span style="color:var(--red)">Errore: ${e.message}</span>`;
+    btn.disabled=false;
+    btn.innerHTML='Analizza con AI';
+  });
+}
+
 function initAuth(){
   if(localStorage.getItem(_T)==="1"){
     document.getElementById("loginScreen").style.display="none";
@@ -1595,6 +1702,22 @@ function buildRicorrenti(){
 
 function buildOttimizzazioni(){
   if(!TXS.length) return;
+
+  // Update KPI strip with real data
+  const nM=MONTHLY.length||13;
+  const FIXED_CATS_KPI=["Pagamento affitti","Carburanti","Assicurazioni","Spese mediche","Bonifici in uscita"];
+  const DISC_CATS_KPI=["Ristoranti e bar","Tempo libero varie","Hi-tech e informatica","Abbigliamento"];
+  let fisse=0,disc=0,rid=0,saveEst=0;
+  const catTotKpi={};
+  TXS.filter(t=>t.imp<0).forEach(t=>{const c=t.cat||"Altre";catTotKpi[c]=(catTotKpi[c]||0)+Math.abs(t.imp);});
+  Object.entries(catTotKpi).forEach(([c,tot])=>{
+    if(FIXED_CATS_KPI.some(f=>c.includes(f))) fisse+=tot/nM;
+    else if(DISC_CATS_KPI.some(f=>c.includes(f))){disc+=tot/nM;rid++;saveEst+=tot/nM*0.25;}
+  });
+  document.getElementById("ottKpiFisse").textContent=fv(Math.round(fisse));
+  document.getElementById("ottKpiDisc").textContent=fv(Math.round(disc));
+  document.getElementById("ottKpiRid").textContent=rid;
+  document.getElementById("ottKpiSave").textContent="€"+Math.round(saveEst)+"/m";
 
   // ── Calcola totali reali per categoria ─────────────────────────
   const uscite = TXS.filter(t=>t.imp<0);

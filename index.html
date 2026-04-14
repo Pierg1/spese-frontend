@@ -414,6 +414,28 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
   font-size:12px;color:var(--red);font-weight:600;
   margin-top:8px;min-height:18px;
 }
+
+/* DATA LOADER OVERLAY */
+#dataLoader{
+  position:fixed;inset:0;z-index:9998;
+  background:rgba(255,255,255,0.85);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;
+  transition:opacity .3s;
+}
+#dataLoader.hiding{opacity:0;pointer-events:none}
+.loader-spinner{
+  width:36px;height:36px;
+  border:3px solid var(--border2);
+  border-top-color:var(--text);
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-text{font-size:13px;font-weight:600;color:var(--text2)}
+.loader-sub{font-size:11px;color:var(--text3)}
 </style>
 <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExNSIgZmlsbD0iIzBBMEEwQSIvPjx0ZXh0IHg9IjI2MCIgeT0iMzcwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iSW50ZXIsc3lzdGVtLXVpLC1hcHBsZS1zeXN0ZW0sc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjgwMCIgZm9udC1zaXplPSIzMzAiIGZpbGw9IiNGRkZGRkYiIGxldHRlci1zcGFjaW5nPSItOCI+UzwvdGV4dD48L3N2Zz4=">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExNSIgZmlsbD0iIzBBMEEwQSIvPjx0ZXh0IHg9IjI2MCIgeT0iMzcwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iSW50ZXIsc3lzdGVtLXVpLC1hcHBsZS1zeXN0ZW0sc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjgwMCIgZm9udC1zaXplPSIzMzAiIGZpbGw9IiNGRkZGRkYiIGxldHRlci1zcGFjaW5nPSItOCI+UzwvdGV4dD48L3N2Zz4=">
@@ -424,6 +446,11 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
 </head>
 <body>
 
+<div id="dataLoader">
+  <div class="loader-spinner"></div>
+  <div class="loader-text">Caricamento dati...</div>
+  <div class="loader-sub">Connessione al server in corso</div>
+</div>
 <div id="loginScreen">
   <div class="login-box">
     <div class="login-logo">S</div>
@@ -942,18 +969,14 @@ Fornisci:
 
 Sii diretto, specifico con i numeri reali, e pratico. Massimo 250 parole.`;
 
-  fetch("https://api.anthropic.com/v1/messages",{
+  fetch(API_URL+"/ai/analisi",{
     method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      model:"claude-sonnet-4-20250514",
-      max_tokens:600,
-      messages:[{role:"user",content:prompt}]
-    })
+    headers:{"Content-Type":"application/json","x-api-key":API_KEY},
+    body:JSON.stringify({prompt})
   })
   .then(r=>r.json())
   .then(data=>{
-    const text=data.content?.[0]?.text||"Errore nella risposta AI.";
+    const text=data.text||"Errore nella risposta AI.";
     // Format with paragraphs
     out.innerHTML=text.split("\n").filter(l=>l.trim()).map(l=>{
       if(l.match(/^\d+\./)||l.match(/^[•\-]/)) return `<div style="margin:6px 0;padding-left:12px">${l}</div>`;
@@ -1047,7 +1070,23 @@ function buildMonthly(){
 }
 
 let _chartsInited=false;
+function showLoader(msg="Caricamento dati...", sub=""){
+  const el=document.getElementById("dataLoader");
+  if(!el) return;
+  el.querySelector(".loader-text").textContent=msg;
+  el.querySelector(".loader-sub").textContent=sub;
+  el.classList.remove("hiding");
+  el.style.display="flex";
+}
+function hideLoader(){
+  const el=document.getElementById("dataLoader");
+  if(!el) return;
+  el.classList.add("hiding");
+  setTimeout(()=>{el.style.display="none";el.classList.remove("hiding");},350);
+}
+
 async function loadData(){
+  showLoader("Caricamento dati...", "Connessione al server in corso");
   const bar=document.getElementById("loadingBar")||Object.assign(document.createElement("div"),
     {id:"loadingBar",style:"position:fixed;top:0;left:0;right:0;height:3px;background:var(--blue);z-index:9999"});
   document.body.appendChild(bar);
@@ -1082,6 +1121,7 @@ async function loadData(){
     buildRicorrenti();
     buildOttimizzazioni();
     buildPills();
+    hideLoader();
     // populate selectors
     const _fM=document.getElementById("fMese"),_fC=document.getElementById("fCat");
     _fM.innerHTML='<option value="">Tutti i mesi</option>'+[...new Set(TXS.map(t=>t.ml))].map(m=>`<option value="${m}">${m}</option>`).join("");
@@ -1094,6 +1134,7 @@ async function loadData(){
     if(lastSync) lastSync.textContent="Aggiornato "+new Date().toLocaleString("it-IT",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
   } catch(e){
     console.error("loadData error:",e);
+    hideLoader();
     const err=document.createElement("div");
     err.style.cssText="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#DC2626;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999";
     err.textContent="Errore caricamento dati: "+e.message;

@@ -775,7 +775,7 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
         ondragleave="this.style.borderColor='var(--border2)';this.style.background=''"
         ondrop="event.preventDefault();this.style.borderColor='var(--border2)';this.style.background='';uploadFile(event.dataTransfer.files[0])"
         onclick="document.getElementById('fileInput').click()">
-        <div style="font-size:32px;margin-bottom:6px">📂</div>
+        <div style="margin-bottom:10px"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></div>
         <div style="font-weight:700;margin-bottom:3px">Trascina il file .xlsx qui</div>
         <div style="font-size:12px;color:var(--text3)">oppure tocca per selezionare</div>
         <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="uploadFile(this.files[0])">
@@ -788,7 +788,7 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
         ondragleave="this.style.borderColor='var(--border2)';this.style.background=''"
         ondrop="event.preventDefault();this.style.borderColor='var(--border2)';this.style.background='';uploadPaypal(event.dataTransfer.files[0])"
         onclick="document.getElementById('fileInputPaypal').click()">
-        <div style="font-size:32px;margin-bottom:6px">💳</div>
+        <div style="margin-bottom:10px"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></div>
         <div style="font-weight:700;margin-bottom:3px">Trascina il file .csv qui</div>
         <div style="font-size:12px;color:var(--text3)">oppure tocca per selezionare</div>
         <input type="file" id="fileInputPaypal" accept=".csv" style="display:none" onchange="uploadPaypal(this.files[0])">
@@ -862,7 +862,7 @@ async function uploadFile(file){
 
     st.innerHTML=json.inserted>0
       ? `<div style="background:var(--green-lt);border:1px solid #BBF7D0;border-radius:8px;padding:10px 14px">
-           <div style="font-weight:700;color:var(--green)">✓ ${json.inserted} nuovi movimenti importati</div>
+           <div style="font-weight:700;color:var(--green)"> ${json.inserted} nuovi movimenti importati</div>
            <div style="font-size:12px;color:#166534;margin-top:2px">${json.skipped} già presenti · ${json.date_range.from} → ${json.date_range.to}</div>
          </div>`
       : `<div style="background:#F5F5F5;border-radius:8px;padding:10px 14px">
@@ -881,7 +881,7 @@ async function uploadFile(file){
     prog.style.display="none";
     dz.style.opacity="1"; dz.style.pointerEvents="auto";
     closeBtn.disabled=false;
-    st.innerHTML=`<div style="background:var(--red-lt);border-radius:8px;padding:10px 14px;color:var(--red);font-weight:600">✗ ${e.message}</div>`;
+    st.innerHTML=`<div style="background:var(--red-lt);border-radius:8px;padding:10px 14px;color:var(--red);font-weight:600"> ${e.message}</div>`;
   }
 }
 
@@ -911,85 +911,113 @@ function analizzaConAI(){
   const box=document.getElementById("aiAnalysisBox");
   const out=document.getElementById("aiAnalysisContent");
   btn.disabled=true;
-  btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/></svg> Analisi in corso...';
+  btn.innerHTML='Analisi in corso...';
   box.style.display="block";
-  out.innerHTML='<span style="color:var(--text3)">Elaborazione dati...</span>';
+  out.innerHTML='<span style="color:var(--text3)">Elaborazione...</span>';
 
-  // Build summary for AI
-  const nMesi=MONTHLY.length;
-  const totEntrate=TXS.filter(t=>t.imp>0).reduce((s,t)=>s+t.imp,0);
-  const totUscite=TXS.filter(t=>t.imp<0).reduce((s,t)=>s+Math.abs(t.imp),0);
-  const saldo=totEntrate-totUscite;
+  setTimeout(()=>{
+    const nMesi=MONTHLY.length||13;
+    const totEntrate=TXS.filter(t=>t.imp>0).reduce((s,t)=>s+t.imp,0);
+    const totUscite=TXS.filter(t=>t.imp<0).reduce((s,t)=>s+Math.abs(t.imp),0);
+    const saldo=totEntrate-totUscite;
+    const tassoRisparmio=((saldo/totEntrate)*100).toFixed(1);
+    const mediaUscite=totUscite/nMesi;
 
-  // Category breakdown
-  const catTot={};
-  TXS.filter(t=>t.imp<0).forEach(t=>{
-    const c=t.cat||"Altre";
-    catTot[c]=(catTot[c]||0)+Math.abs(t.imp);
-  });
-  const catSorted=Object.entries(catTot).sort((a,b)=>b[1]-a[1]).slice(0,12);
+    // Category analysis
+    const catTot={};
+    TXS.filter(t=>t.imp<0).forEach(t=>{
+      const c=t.cat||"Altre uscite";
+      if(!catTot[c])catTot[c]={tot:0,txs:[],merchants:{}};
+      catTot[c].tot+=Math.abs(t.imp);
+      catTot[c].txs.push(t);
+      const m=t.op.trim().slice(0,25);
+      catTot[c].merchants[m]=(catTot[c].merchants[m]||{tot:0,cnt:0,months:new Set()});
+      catTot[c].merchants[m].tot+=Math.abs(t.imp);
+      catTot[c].merchants[m].cnt++;
+      catTot[c].merchants[m].months.add(t.mk);
+    });
 
-  // Top merchants
-  const merchTot={};
-  TXS.filter(t=>t.imp<0).forEach(t=>{
-    const m=t.op.trim().slice(0,30);
-    if(!merchTot[m]) merchTot[m]={tot:0,cnt:0,months:new Set()};
-    merchTot[m].tot+=Math.abs(t.imp);
-    merchTot[m].cnt++;
-    merchTot[m].months.add(t.mk);
-  });
-  const topMerch=Object.entries(merchTot).sort((a,b)=>b[1].tot-a[1].tot).slice(0,10);
+    // Merchant analysis
+    const merchAll={};
+    TXS.filter(t=>t.imp<0).forEach(t=>{
+      const m=t.op.trim().slice(0,30);
+      if(!merchAll[m])merchAll[m]={tot:0,cnt:0,months:new Set(),cat:t.cat};
+      merchAll[m].tot+=Math.abs(t.imp);
+      merchAll[m].cnt++;
+      merchAll[m].months.add(t.mk);
+    });
 
-  // One-time vs recurring
-  const oneTime=topMerch.filter(([,v])=>v.months.size<=2&&v.tot>200);
-  const recurring=topMerch.filter(([,v])=>v.months.size>=3);
+    const recurring=Object.entries(merchAll).filter(([,v])=>v.months.size>=4).sort((a,b)=>b[1].tot-a[1].tot);
+    const oneTimeBig=Object.entries(merchAll).filter(([,v])=>v.months.size<=2&&v.tot>300).sort((a,b)=>b[1].tot-a[1].tot);
+    const catSorted=Object.entries(catTot).sort((a,b)=>b[1].tot-a[1].tot);
 
-  const prompt=`Sei un consulente finanziario personale. Analizza queste spese di ${nMesi} mesi e dai consigli pratici e specifici in italiano.
+    // Build intelligent analysis
+    const insights=[];
 
-RIEPILOGO:
-- Entrate totali: €${totEntrate.toFixed(0)}
-- Uscite totali: €${totUscite.toFixed(0)}
-- Saldo: €${saldo.toFixed(0)}
-- Media mensile uscite: €${(totUscite/nMesi).toFixed(0)}
+    // 1. Overall assessment
+    const risparmioMsg = saldo>0
+      ? `Il tuo saldo netto su ${nMesi} mesi è <strong>+${fv(saldo)}</strong> (tasso risparmio ${tassoRisparmio}%). `
+      : `Attenzione: hai speso <strong>${fv(Math.abs(saldo))}</strong> più di quanto hai guadagnato in ${nMesi} mesi. `;
+    
+    const livello = parseFloat(tassoRisparmio)>=20?"ottimo":parseFloat(tassoRisparmio)>=10?"buono":parseFloat(tassoRisparmio)>=5?"sufficiente":"da migliorare";
+    insights.push(` <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:inline;vertical-align:-2px;margin-right:5px"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><strong>Panoramica</strong><br>${risparmioMsg}Il tasso di risparmio del ${tassoRisparmio}% è <em>${livello}</em>. Media spese mensili: ${fv(mediaUscite)}.`);
 
-CATEGORIE DI SPESA (totale periodo):
-${catSorted.map(([c,t])=>`- ${c}: €${t.toFixed(0)} (€${(t/nMesi).toFixed(0)}/mese)`).join("\n")}
+    // 2. Top opportunities
+    const opps=[];
+    
+    // Check ristoranti
+    const rist=catTot["Ristoranti e bar"];
+    if(rist&&rist.tot/nMesi>200){
+      const media=rist.tot/nMesi;
+      const topR=Object.entries(rist.merchants).sort((a,b)=>b[1].tot-a[1].tot).slice(0,2);
+      opps.push(`Ristoranti e bar: ${fv(media)}/mese (${fv(rist.tot)} totale). ${topR.map(([n,v])=>`${n} ${fv(v.tot)}`).join(", ")}. Ridurre di 2 uscite/mese = circa ${fv(media*0.25)} risparmio.`);
+    }
 
-TOP MERCHANT RICORRENTI (3+ mesi):
-${recurring.slice(0,6).map(([n,v])=>`- ${n}: €${v.tot.toFixed(0)} totale, ${v.cnt} transazioni, ${v.months.size} mesi`).join("\n")}
+    // Check domiciliazioni
+    const dom=catTot["Domiciliazioni e Utenze"];
+    if(dom){
+      const recurringDom=Object.entries(dom.merchants).filter(([,v])=>v.months.size>=4).sort((a,b)=>b[1].tot-a[1].tot).slice(0,3);
+      if(recurringDom.length>0){
+        opps.push(`Domiciliazioni ricorrenti: ${recurringDom.map(([n,v])=>`${n} ${fv(v.tot/nMesi)}/mese`).join(", ")}. Verifica quali puoi cancellare.`);
+      }
+    }
 
-ACQUISTI UNA TANTUM (importo >€200):
-${oneTime.map(([n,v])=>`- ${n}: €${v.tot.toFixed(0)}`).join("\n")||"Nessuno rilevante"}
+    // Check prelievi
+    const prev=catTot["Prelievi"];
+    if(prev&&prev.tot/nMesi>100){
+      opps.push(`Prelievi contante: ${fv(prev.tot/nMesi)}/mese non tracciabili. Usare la carta ovunque migliora il controllo delle spese.`);
+    }
 
-Fornisci:
-1. Una valutazione generale del profilo di spesa (2-3 frasi)
-2. Le 3 opportunità di risparmio più concrete con importi stimati
-3. Un consiglio su eventuali acquisti una tantum
-4. Un suggerimento su come migliorare il tasso di risparmio attuale
+    // Check high recurring merchants
+    const highRec=recurring.filter(([,v])=>v.tot/nMesi>50&&v.cat!=="Pagamento affitti").slice(0,2);
+    highRec.forEach(([n,v])=>{
+      if(!opps.some(o=>o.includes(n.slice(0,10)))){
+        opps.push(`${n}: ${fv(v.tot/nMesi)}/mese ricorrente (${v.months.size} mesi). Valuta se è ancora necessario.`);
+      }
+    });
 
-Sii diretto, specifico con i numeri reali, e pratico. Massimo 250 parole.`;
+    if(opps.length>0){
+      insights.push(` <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:inline;vertical-align:-2px;margin-right:5px"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg><strong>Opportunità di risparmio</strong><br>${opps.slice(0,3).map((o,i)=>`${i+1}. ${o}`).join("<br>")}`);
+    }
 
-  fetch(API_URL+"/ai/analisi",{
-    method:"POST",
-    headers:{"Content-Type":"application/json","x-api-key":API_KEY},
-    body:JSON.stringify({prompt})
-  })
-  .then(r=>r.json())
-  .then(data=>{
-    const text=data.text||"Errore nella risposta AI.";
-    // Format with paragraphs
-    out.innerHTML=text.split("\n").filter(l=>l.trim()).map(l=>{
-      if(l.match(/^\d+\./)||l.match(/^[•\-]/)) return `<div style="margin:6px 0;padding-left:12px">${l}</div>`;
-      return `<p style="margin:6px 0">${l}</p>`;
-    }).join("");
+    // 3. One-time purchases note
+    if(oneTimeBig.length>0){
+      const items=oneTimeBig.slice(0,3).map(([n,v])=>`${n} (${fv(v.tot)})`).join(", ");
+      insights.push(` <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:inline;vertical-align:-2px;margin-right:5px"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><strong>Acquisti una tantum</strong><br>Questi acquisti significativi non sono ricorrenti: ${items}. Non influenzano la media mensile ordinaria.`);
+    }
+
+    // 4. Saving tip
+    const saveTarget=Math.round(mediaUscite*0.15);
+    const bestCat=catSorted.find(([c])=>!["Pagamento affitti","Bonifici in uscita","Spese mediche"].some(x=>c.includes(x)));
+    if(bestCat){
+      insights.push(` <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:inline;vertical-align:-2px;margin-right:5px"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><strong>Obiettivo mensile</strong><br>Riducendo del 15% le spese in <em>${bestCat[0]}</em> (attualmente ${fv(bestCat[1].tot/nMesi)}/mese) potresti risparmiare circa <strong>${fv(saveTarget)}/mese</strong> — ${fv(saveTarget*12)}/anno.`);
+    }
+
+    out.innerHTML=insights.map(i=>`<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">${i}</div>`).join("").replace(/<div style="[^"]*"><\/div>$/,"");
+
     btn.disabled=false;
     btn.innerHTML='<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> Rianalizza';
-  })
-  .catch(e=>{
-    out.innerHTML=`<span style="color:var(--red)">Errore: ${e.message}</span>`;
-    btn.disabled=false;
-    btn.innerHTML='Analizza con AI';
-  });
+  }, 600);
 }
 
 function initAuth(){
@@ -1035,7 +1063,7 @@ async function uploadPaypal(file){
     progBar.style.width="100%";progBar.style.background="var(--green)";
     progLabel.style.color="var(--green)";progLabel.textContent="Completato!";
     st.innerHTML=json.inserted>0
-      ?`<div style="background:var(--green-lt);border:1px solid #BBF7D0;border-radius:8px;padding:10px 14px"><div style="font-weight:700;color:var(--green)">✓ ${json.inserted} transazioni PayPal importate</div><div style="font-size:12px;color:#166534;margin-top:2px">${json.enriched||0} abbinate a Isybank · ${json.skipped} già presenti</div></div>`
+      ?`<div style="background:var(--green-lt);border:1px solid #BBF7D0;border-radius:8px;padding:10px 14px"><div style="font-weight:700;color:var(--green)"> ${json.inserted} transazioni PayPal importate</div><div style="font-size:12px;color:#166534;margin-top:2px">${json.enriched||0} abbinate a Isybank · ${json.skipped} già presenti</div></div>`
       :`<div style="background:#F5F5F5;border-radius:8px;padding:10px 14px"><div style="font-weight:600">Nessuna novità — dati già aggiornati</div></div>`;
     setTimeout(()=>{
       document.getElementById("uploadModal").style.display="none";
@@ -1046,7 +1074,7 @@ async function uploadPaypal(file){
   }catch(e){
     prog.style.display="none";dz.style.opacity="1";dz.style.pointerEvents="auto";
     closeBtn.disabled=false;
-    st.innerHTML=`<div style="background:var(--red-lt);border-radius:8px;padding:10px 14px;color:var(--red);font-weight:600">✗ ${e.message}</div>`;
+    st.innerHTML=`<div style="background:var(--red-lt);border-radius:8px;padding:10px 14px;color:var(--red);font-weight:600"> ${e.message}</div>`;
   }
 }
 
@@ -1469,7 +1497,7 @@ function renderMov(){
     `<div class="kpi-cell"><div class="kpi-lbl">Saldo</div><div class="kpi-num ${sl>=0?"green":"red"}">${fs(sl)}</div></div>`+
     `<div class="kpi-cell"><div class="kpi-lbl">Operazioni</div><div class="kpi-num">${rows.length}</div></div>`;
   const chips=[];
-  if(fm)chips.push({l:"📅 "+fm,id:"mese"});
+  if(fm)chips.push({l:" "+fm,id:"mese"});
   if(fc)chips.push({l:fc,id:"cat"});
   if(ft)chips.push({l:ft==="out"?"Solo uscite":"Solo entrate",id:"tipo"});
   if(fs2)chips.push({l:'"'+fs2+'"',id:"search"});
@@ -1676,7 +1704,7 @@ function saveBudgets(){
   localStorage.setItem("spese_budgets",JSON.stringify(budgets));
   renderBudget();
   // Visual feedback
-  const btn=event.target;btn.textContent="✓ Salvato";btn.style.background="#16A34A";
+  const btn=event.target;btn.textContent=" Salvato";btn.style.background="#16A34A";
   setTimeout(()=>{btn.textContent="Salva budget";btn.style.background="";},1500);
 }
 // ── RICORRENTI AUTO-DETECT ─────────────────────────────────────────

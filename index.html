@@ -539,7 +539,10 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
     <div class="card"><div class="card-title">Entrate vs Uscite</div><div style="position:relative;height:220px"><canvas id="cDash"></canvas></div></div>
     <div class="card"><div class="card-title">Top categorie di spesa</div><div style="position:relative;height:220px"><canvas id="cPie"></canvas></div></div>
   </div>
-  <div class="card"><div class="card-title">Saldo mensile</div><div style="position:relative;height:130px"><canvas id="cSaldo"></canvas></div></div>
+  <div class="grid2">
+    <div class="card"><div class="card-title">Saldo mensile</div><div style="position:relative;height:130px"><canvas id="cSaldo"></canvas></div></div>
+    <div class="card"><div class="card-title">Fonti di entrata</div><div style="position:relative;height:130px"><canvas id="cEntratePie"></canvas></div></div>
+  </div>
 </div>
 
 <!-- MOVIMENTI -->
@@ -566,6 +569,10 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
   <div class="grid2" style="margin-bottom:12px">
     <div class="card" style="margin-bottom:0"><div class="card-title" id="movPieTitle">Uscite per categoria</div><div style="position:relative;height:210px"><canvas id="cMovPie"></canvas></div></div>
     <div class="card" style="margin-bottom:0"><div class="card-title" id="movBarTitle">Top categorie</div><div style="position:relative;height:210px"><canvas id="cMovBar"></canvas></div></div>
+  </div>
+  <div class="grid2" style="margin-bottom:12px">
+    <div class="card" style="margin-bottom:0"><div class="card-title">Fonti di entrata</div><div style="position:relative;height:210px"><canvas id="cMovEntrate"></canvas></div></div>
+    <div class="card" style="margin-bottom:0"><div class="card-title">Entrate vs Uscite</div><div style="position:relative;height:210px"><canvas id="cMovEU"></canvas></div></div>
   </div>
   <div style="font-size:12px;color:var(--text3);margin-bottom:7px;font-weight:500" id="movCount"></div>
   <div class="tbl-box">
@@ -1354,6 +1361,20 @@ _cSaldo=new Chart(document.getElementById("cSaldo"),{type:"bar",data:{
   datasets:[{data:MONTHLY.map(r=>r.s),backgroundColor:MONTHLY.map(r=>r.s>=0?"rgba(30,58,95,.7)":"rgba(220,38,38,.55)"),borderRadius:3}]},
   options:{...chopt,scales:{x:{ticks:{font:{size:10},autoSkip:false,maxRotation:45}},y:{ticks:{callback:v=>"€"+Math.round(v)}}}}
 });
+// Fonti di entrata
+if(window._cEntratePie)window._cEntratePie.destroy();
+const entrateMap={};
+TXS.filter(t=>t.imp>0).forEach(t=>{
+  const k=t.op.slice(0,25);
+  entrateMap[k]=(entrateMap[k]||0)+t.imp;
+});
+const entrateArr=Object.entries(entrateMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+window._cEntratePie=new Chart(document.getElementById("cEntratePie"),{type:"doughnut",data:{
+  labels:entrateArr.map(([k])=>k.length>22?k.slice(0,20)+"…":k),
+  datasets:[{data:entrateArr.map(([,v])=>v.toFixed(2)),backgroundColor:PAL,borderWidth:2,borderColor:"#fff"}]},
+  options:{...chopt,plugins:{legend:{position:"right",labels:{font:{size:10},boxWidth:9,padding:5},display:window.innerWidth>=480},
+    tooltip:{callbacks:{label:ctx=>" "+ctx.label+": "+fv(+ctx.parsed)}}}}
+});
 }
 
 // ── MENSILE ───────────────────────────────────────────────────────
@@ -1539,6 +1560,38 @@ function renderMov(){
     datasets:[{data:cats.map(r=>r[1].toFixed(2)),backgroundColor:PAL,borderRadius:3}]},
     options:{...chopt,indexAxis:"y",scales:{x:{ticks:{callback:v=>"€"+Math.round(v)}},y:{ticks:{font:{size:11}}}}}
   });
+  // Entrate charts
+  if(window._mEntrate)window._mEntrate.destroy();
+  if(window._mEU)window._mEU.destroy();
+  const entrRows=rows.filter(t=>t.imp>0);
+  const euGrid=document.getElementById("cMovEntrate")?.parentElement?.parentElement?.parentElement;
+  if(euGrid)euGrid.style.display=entrRows.length>0?"grid":"none";
+  if(entrRows.length>0){
+    const eMap={};
+    entrRows.forEach(t=>{const k=t.op.slice(0,25);eMap[k]=(eMap[k]||0)+t.imp;});
+    const eArr=Object.entries(eMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    window._mEntrate=new Chart(document.getElementById("cMovEntrate"),{type:"doughnut",data:{
+      labels:eArr.map(([k])=>k.length>22?k.slice(0,20)+"…":k),
+      datasets:[{data:eArr.map(([,v])=>v.toFixed(2)),backgroundColor:PAL,borderWidth:2,borderColor:"#fff"}]},
+      options:{...chopt,plugins:{legend:{position:"right",labels:{font:{size:10},boxWidth:9,padding:4},display:window.innerWidth>=480},
+        tooltip:{callbacks:{label:ctx=>" "+ctx.label+": "+fv(+ctx.parsed)}}}}
+    });
+    const euByMon={};
+    rows.forEach(t=>{
+      if(!euByMon[t.ml])euByMon[t.ml]={e:0,u:0};
+      if(t.imp>0)euByMon[t.ml].e+=t.imp; else euByMon[t.ml].u+=Math.abs(t.imp);
+    });
+    const euMons=Object.entries(euByMon).sort((a,b)=>a[0].localeCompare(b[0]));
+    window._mEU=new Chart(document.getElementById("cMovEU"),{type:"bar",data:{
+      labels:euMons.map(([m])=>m),
+      datasets:[
+        {label:"Entrate",data:euMons.map(([,v])=>v.e.toFixed(2)),backgroundColor:"rgba(30,58,95,.2)",borderColor:"#1E3A5F",borderWidth:1.5,borderRadius:2},
+        {label:"Uscite",data:euMons.map(([,v])=>v.u.toFixed(2)),backgroundColor:"rgba(220,38,38,.15)",borderColor:"#DC2626",borderWidth:1.5,borderRadius:2},
+      ]},
+      options:{...chopt,plugins:{legend:{labels:{font:{size:11}}}},
+        scales:{x:{ticks:{font:{size:10},autoSkip:true,maxRotation:45}},y:{ticks:{callback:v=>"€"+Math.round(v/1000)+"k"}}}}
+    });
+  }
   document.getElementById("movCount").textContent=rows.length+" operazioni trovate";
   document.getElementById("tbMov").innerHTML=rows.slice(0,300).map(t=>{
     const d=t.det&&t.det!="nan"?`<small style="color:var(--text3);display:block;font-size:11px;margin-top:1px">${t.det.slice(0,55)}…</small>`:"";

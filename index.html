@@ -528,10 +528,10 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
 <div id="pnl-panoramica" class="panel on">
   <div class="page-title">Panoramica</div>
   <div class="kpi-strip" id="panKpi">
-    <div class="kpi-cell"><div class="kpi-lbl">Totale Entrate</div><div class="kpi-num green">€ 73.557</div><div class="kpi-hint">13 mesi</div></div>
-    <div class="kpi-cell"><div class="kpi-lbl">Totale Uscite</div><div class="kpi-num red">€ 63.257</div><div class="kpi-hint">512 operazioni</div></div>
-    <div class="kpi-cell"><div class="kpi-lbl">Saldo Netto</div><div class="kpi-num blue">€ 10.300</div><div class="kpi-hint">+14% tasso risparmio</div></div>
-    <div class="kpi-cell" id="panTrendKpi"><div class="kpi-lbl">Media uscite/mese</div><div class="kpi-num">€ 4.518</div><div class="kpi-hint" id="panTrendHint">54,8 op. media</div></div>
+    <div class="kpi-cell"><div class="kpi-lbl">Totale Entrate</div><div class="kpi-num green" id="panEntrate">—</div><div class="kpi-hint" id="panEntrateHint">—</div></div>
+    <div class="kpi-cell"><div class="kpi-lbl">Totale Uscite</div><div class="kpi-num red" id="panUscite">—</div><div class="kpi-hint" id="panUsciteHint">—</div></div>
+    <div class="kpi-cell"><div class="kpi-lbl">Saldo Netto</div><div class="kpi-num blue" id="panSaldo">—</div><div class="kpi-hint" id="panSaldoHint">—</div></div>
+    <div class="kpi-cell"><div class="kpi-lbl">Media uscite/mese</div><div class="kpi-num" id="panMedia">—</div><div class="kpi-hint" id="panMediaHint">—</div></div>
   </div>
   <!-- Trend 3m badges -->
   <div id="trendStrip" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px"></div>
@@ -1130,6 +1130,21 @@ async function loadData(){
       imp:parseFloat(r.importo),
     }));
     buildMonthly();
+    // Update panoramica KPI with real data
+    const _e=TXS.filter(t=>t.imp>0).reduce((s,t)=>s+t.imp,0);
+    const _u=TXS.filter(t=>t.imp<0).reduce((s,t)=>s+Math.abs(t.imp),0);
+    const _s=_e-_u;
+    const _nM=MONTHLY.length||1;
+    const _tasso=((_s/_e)*100).toFixed(1);
+    const _nOp=TXS.filter(t=>t.imp<0).length;
+    document.getElementById("panEntrate").textContent=fv(_e);
+    document.getElementById("panEntrateHint").textContent=_nM+" mesi";
+    document.getElementById("panUscite").textContent=fv(_u);
+    document.getElementById("panUsciteHint").textContent=_nOp+" operazioni";
+    document.getElementById("panSaldo").textContent=fs(_s);
+    document.getElementById("panSaldoHint").textContent=(+_tasso>0?"+":"")+_tasso+"% tasso risparmio";
+    document.getElementById("panMedia").textContent=fv(_u/_nM);
+    document.getElementById("panMediaHint").textContent=(TXS.filter(t=>t.imp<0).length/_nM).toFixed(1)+" op. media";
     if(!_chartsInited){ 
       _chartsInited=true;
       _initPanCharts();

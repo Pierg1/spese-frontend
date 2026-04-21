@@ -1564,8 +1564,13 @@ function renderMov(){
   if(window._mEntrate)window._mEntrate.destroy();
   if(window._mEU)window._mEU.destroy();
   const entrRows=rows.filter(t=>t.imp>0);
+  // Show/hide chart grids based on filter
+  const usciteGrid=document.getElementById("cMovPie")?.parentElement?.parentElement?.parentElement;
   const euGrid=document.getElementById("cMovEntrate")?.parentElement?.parentElement?.parentElement;
-  if(euGrid)euGrid.style.display=entrRows.length>0?"grid":"none";
+  const showUscite = ft!=="in";  // hide uscite charts if "solo entrate"
+  const showEntrate = ft!=="out" && entrRows.length>0;  // hide entrate charts if "solo uscite"
+  if(usciteGrid) usciteGrid.style.display=showUscite?"grid":"none";
+  if(euGrid) euGrid.style.display=showEntrate?"grid":"none";
   if(entrRows.length>0){
     const eMap={};
     entrRows.forEach(t=>{const k=t.op.slice(0,25);eMap[k]=(eMap[k]||0)+t.imp;});

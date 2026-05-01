@@ -106,6 +106,8 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
 .toolbar input:focus,.toolbar select:focus{border-color:var(--text);box-shadow:0 0 0 2px rgba(0,0,0,.05)}
 .toolbar input{flex:1;min-width:140px}
 .toolbar input::placeholder{color:var(--text3)}
+.btn-period.active{background:var(--text);color:#fff;border-color:var(--text)}
+#periodFilter input[type="date"]{flex:0 0 auto;min-width:0}
 .chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
 .chip{display:inline-flex;align-items:center;gap:4px;background:#F5F5F5;border-radius:20px;padding:3px 9px;font-size:12px;font-weight:600;color:var(--text2)}
 .chip-x{background:none;border:none;cursor:pointer;font-size:12px;color:var(--text3);padding:0;font-weight:700;line-height:1}
@@ -527,6 +529,22 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
 <!-- PANORAMICA -->
 <div id="pnl-panoramica" class="panel on">
   <div class="page-title">Panoramica</div>
+
+  <!-- FILTRO PERIODO -->
+  <div class="toolbar" id="periodFilter" style="margin-bottom:14px">
+    <button class="btn btn-period" data-preset="3M" onclick="setPeriodPreset('3M')">3 mesi</button>
+    <button class="btn btn-period" data-preset="6M" onclick="setPeriodPreset('6M')">6 mesi</button>
+    <button class="btn btn-period" data-preset="YTD" onclick="setPeriodPreset('YTD')">Anno corrente</button>
+    <button class="btn btn-period" data-preset="1Y" onclick="setPeriodPreset('1Y')">12 mesi</button>
+    <button class="btn btn-period" data-preset="ALL" onclick="setPeriodPreset('ALL')">Tutto</button>
+    <span style="width:1px;height:20px;background:var(--border);margin:0 4px"></span>
+    <span style="font-size:11px;color:var(--text3);font-weight:600">Custom:</span>
+    <input type="date" id="periodFrom" onchange="setPeriodCustom()" style="height:32px;padding:0 8px;border:1px solid var(--border2);border-radius:var(--r-sm);font-family:inherit;font-size:12px;color:var(--text);background:var(--surface)">
+    <span style="font-size:11px;color:var(--text3)">→</span>
+    <input type="date" id="periodTo" onchange="setPeriodCustom()" style="height:32px;padding:0 8px;border:1px solid var(--border2);border-radius:var(--r-sm);font-family:inherit;font-size:12px;color:var(--text);background:var(--surface)">
+    <span id="periodLabel" style="margin-left:auto;font-size:11px;color:var(--text3);font-weight:600"></span>
+  </div>
+
   <div class="kpi-strip" id="panKpi">
     <div class="kpi-cell"><div class="kpi-lbl">Totale Entrate</div><div class="kpi-num green" id="panEntrate">—</div><div class="kpi-hint" id="panEntrateHint">—</div></div>
     <div class="kpi-cell"><div class="kpi-lbl">Totale Uscite</div><div class="kpi-num red" id="panUscite">—</div><div class="kpi-hint" id="panUsciteHint">—</div></div>
@@ -1087,6 +1105,113 @@ async function uploadPaypal(file){
 }
 
 
+// ─── FILTRO PERIODO PANORAMICA ────────────────────────────────────
+// Stato filtro: 'preset' è uno tra '3M','6M','YTD','1Y','ALL','CUSTOM'.
+// Quando 'CUSTOM', usa periodFrom/periodTo (stringhe ISO YYYY-MM-DD).
+let PERIOD = { preset: 'YTD', from: null, to: null };
+
+function _isoToDate(iso){
+  // 'DD/MM/YYYY' -> Date
+  const [d,m,y] = iso.split('/');
+  return new Date(+y, +m-1, +d);
+}
+
+function getPeriodRange(){
+  // Ritorna {from: Date, to: Date} oppure {from:null,to:null} per 'tutto'.
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if(PERIOD.preset === 'ALL') return {from:null, to:null};
+  if(PERIOD.preset === 'CUSTOM'){
+    return {
+      from: PERIOD.from ? new Date(PERIOD.from+'T00:00:00') : null,
+      to:   PERIOD.to   ? new Date(PERIOD.to  +'T23:59:59') : null,
+    };
+  }
+  if(PERIOD.preset === 'YTD'){
+    return { from: new Date(now.getFullYear(), 0, 1), to: today };
+  }
+  const months = {'3M':3, '6M':6, '1Y':12}[PERIOD.preset] || 12;
+  const from = new Date(now.getFullYear(), now.getMonth()-months+1, 1);
+  return { from, to: today };
+}
+
+function getFilteredTXS(){
+  const {from, to} = getPeriodRange();
+  if(!from && !to) return TXS;
+  return TXS.filter(t=>{
+    const d = _isoToDate(t.data);
+    if(from && d < from) return false;
+    if(to   && d > to)   return false;
+    return true;
+  });
+}
+
+function _updatePeriodLabel(){
+  const lbl = document.getElementById('periodLabel');
+  if(!lbl) return;
+  const {from, to} = getPeriodRange();
+  if(!from && !to){ lbl.textContent = TXS.length+' transazioni totali'; return; }
+  const fmt = d=>d.toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});
+  const f = from ? fmt(from) : '...';
+  const t = to ? fmt(to) : 'oggi';
+  const n = getFilteredTXS().length;
+  lbl.textContent = `${f} → ${t}  ·  ${n} transazioni`;
+}
+
+function _updatePeriodButtons(){
+  document.querySelectorAll('.btn-period').forEach(b=>{
+    b.classList.toggle('active', b.dataset.preset === PERIOD.preset);
+  });
+}
+
+function setPeriodPreset(preset){
+  PERIOD.preset = preset;
+  PERIOD.from = null; PERIOD.to = null;
+  document.getElementById('periodFrom').value = '';
+  document.getElementById('periodTo').value = '';
+  _updatePeriodButtons();
+  refreshPanoramica();
+}
+
+function setPeriodCustom(){
+  const f = document.getElementById('periodFrom').value;
+  const t = document.getElementById('periodTo').value;
+  if(!f && !t) return;  // niente da fare
+  PERIOD.preset = 'CUSTOM';
+  PERIOD.from = f || null;
+  PERIOD.to   = t || null;
+  _updatePeriodButtons();
+  refreshPanoramica();
+}
+
+function refreshPanoramica(){
+  if(!TXS.length) return;
+  buildMonthly();           // ricalcola MONTHLY usando TXS_F
+  _updatePanoramicaKPI();   // KPI strip + pillole
+  _initPanCharts();         // i 4 grafici
+  _updatePeriodLabel();
+}
+
+function _updatePanoramicaKPI(){
+  const TF = getFilteredTXS();
+  const _e=TF.filter(t=>t.imp>0).reduce((s,t)=>s+t.imp,0);
+  const _u=TF.filter(t=>t.imp<0).reduce((s,t)=>s+Math.abs(t.imp),0);
+  const _s=_e-_u;
+  const _nM=MONTHLY.length||1;
+  const _tasso=_e>0 ? ((_s/_e)*100).toFixed(1) : '0.0';
+  const _nOp=TF.filter(t=>t.imp<0).length;
+  document.getElementById("panEntrate").textContent=fv(_e);
+  document.getElementById("panEntrateHint").textContent=_nM+" mesi";
+  document.getElementById("panUscite").textContent=fv(_u);
+  document.getElementById("panUsciteHint").textContent=_nOp+" operazioni";
+  document.getElementById("panSaldo").textContent=fs(_s);
+  document.getElementById("panSaldoHint").textContent=(+_tasso>0?"+":"")+_tasso+"% tasso risparmio";
+  document.getElementById("panMedia").textContent=fv(_u/_nM);
+  document.getElementById("panMediaHint").textContent=(_nOp/_nM).toFixed(1)+" op. media";
+  buildTrend();
+}
+
+
 // ─── LOAD DATA ────────────────────────────────────────────────────
 function fmtMeseLabel(dateStr){
   const months=["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
@@ -1096,7 +1221,7 @@ function fmtMeseLabel(dateStr){
 
 function buildMonthly(){
   const mMap={};
-  TXS.forEach(t=>{
+  getFilteredTXS().forEach(t=>{
     if(!mMap[t.mk]) mMap[t.mk]={m:t.ml,mk:t.mk,e:0,u:0,s:0};
     if(t.imp>0) mMap[t.mk].e+=t.imp;
     else mMap[t.mk].u+=Math.abs(t.imp);
@@ -1138,36 +1263,21 @@ async function loadData(){
       imp:parseFloat(r.importo),
     }));
     buildMonthly();
-    // Update panoramica KPI with real data
-    const _e=TXS.filter(t=>t.imp>0).reduce((s,t)=>s+t.imp,0);
-    const _u=TXS.filter(t=>t.imp<0).reduce((s,t)=>s+Math.abs(t.imp),0);
-    const _s=_e-_u;
-    const _nM=MONTHLY.length||1;
-    const _tasso=((_s/_e)*100).toFixed(1);
-    const _nOp=TXS.filter(t=>t.imp<0).length;
-    document.getElementById("panEntrate").textContent=fv(_e);
-    document.getElementById("panEntrateHint").textContent=_nM+" mesi";
-    document.getElementById("panUscite").textContent=fv(_u);
-    document.getElementById("panUsciteHint").textContent=_nOp+" operazioni";
-    document.getElementById("panSaldo").textContent=fs(_s);
-    document.getElementById("panSaldoHint").textContent=(+_tasso>0?"+":"")+_tasso+"% tasso risparmio";
-    document.getElementById("panMedia").textContent=fv(_u/_nM);
-    document.getElementById("panMediaHint").textContent=(TXS.filter(t=>t.imp<0).length/_nM).toFixed(1)+" op. media";
-    if(!_chartsInited){ 
+    // Init filtro periodo: YTD per default. refreshPanoramica() ricalcola
+    // tutto (KPI, pillole, 4 grafici) basandosi su PERIOD.
+    _updatePeriodButtons();
+    refreshPanoramica();
+    if(!_chartsInited){
       _chartsInited=true;
-      _initPanCharts();
       _initMensTrend();
       buildMensile();
       buildCat();
     } else {
-      // Re-render charts with fresh data
-      _initPanCharts();
       _initMensTrend();
       buildMensile();
       buildCat();
     }
     renderMov();
-    buildTrend();
     renderBudget();
     buildRicorrenti();
     buildOttimizzazioni();
@@ -1295,6 +1405,7 @@ function gsClose(){
 
 // ── TREND 3M ─────────────────────────────────────────────────────
 function buildTrend(){
+  const TF=getFilteredTXS();
   const recent=MONTHLY.slice(-3);
   const prev=MONTHLY.slice(-6,-3);
   const recAvgU=recent.reduce((s,r)=>s+r.u,0)/3;
@@ -1305,7 +1416,7 @@ function buildTrend(){
   const prevAvgS=prev.reduce((s,r)=>s+r.s,0)/3;
 
   // Also compute per top categories
-  const topCats=catMap(TXS).slice(0,5).map(e=>e[0]);
+  const topCats=catMap(TF).slice(0,5).map(e=>e[0]);
   const strips=[];
   const makePct=(a,b)=>b>0?((a-b)/b*100).toFixed(1):0;
 
@@ -1319,8 +1430,8 @@ function buildTrend(){
     {lbl:"Uscite (vs 3m prec.)",pct:uPct,inv:true},
     {lbl:"Entrate (vs 3m prec.)",pct:ePct,inv:false},
     ...topCats.map(cat=>{
-      const rA=TXS.filter(t=>t.imp<0&&t.cat===cat&&recent.some(r=>r.mk===t.mk)).reduce((s,t)=>s+Math.abs(t.imp),0)/3;
-      const pA=TXS.filter(t=>t.imp<0&&t.cat===cat&&prev.some(r=>r.mk===t.mk)).reduce((s,t)=>s+Math.abs(t.imp),0)/3;
+      const rA=TF.filter(t=>t.imp<0&&t.cat===cat&&recent.some(r=>r.mk===t.mk)).reduce((s,t)=>s+Math.abs(t.imp),0)/3;
+      const pA=TF.filter(t=>t.imp<0&&t.cat===cat&&prev.some(r=>r.mk===t.mk)).reduce((s,t)=>s+Math.abs(t.imp),0)/3;
       return {lbl:cat.length>20?cat.slice(0,18)+"…":cat,pct:+makePct(rA,pA),inv:true};
     })
   ];
@@ -1336,6 +1447,7 @@ function buildTrend(){
 let _cDash=null,_cPie=null,_cSaldo=null;
 function _initPanCharts(){
 // ── PANORAMICA CHARTS ─────────────────────────────────────────────
+const TF = getFilteredTXS();
 if(_cDash)_cDash.destroy();
 _cDash=new Chart(document.getElementById("cDash"),{type:"bar",data:{
   labels:MONTHLY.map(r=>r.m),
@@ -1346,7 +1458,7 @@ _cDash=new Chart(document.getElementById("cDash"),{type:"bar",data:{
   options:{...chopt,plugins:{legend:{labels:{font:{size:11}}}},
     scales:{x:{ticks:{font:{size:10},autoSkip:false,maxRotation:45}},y:{ticks:{callback:v=>"€"+Math.round(v/1000)+"k"}}}}
 });
-const allC=catMap(TXS).slice(0,8);
+const allC=catMap(TF).slice(0,8);
 if(_cPie)_cPie.destroy();
 _cPie=new Chart(document.getElementById("cPie"),{type:"doughnut",data:{
   labels:allC.map(r=>r[0].length>22?r[0].slice(0,20)+"…":r[0]),
@@ -1365,7 +1477,7 @@ _cSaldo=new Chart(document.getElementById("cSaldo"),{type:"bar",data:{
 // Fonti di entrata
 if(window._cEntratePie)window._cEntratePie.destroy();
 const entrateMap={};
-TXS.filter(t=>t.imp>0).forEach(t=>{
+TF.filter(t=>t.imp>0).forEach(t=>{
   const k=t.op.slice(0,25);
   entrateMap[k]=(entrateMap[k]||0)+t.imp;
 });

@@ -539,9 +539,9 @@ body{font-family:"Inter",sans-serif;background:var(--surface);color:var(--text);
     <button class="btn btn-period" data-preset="ALL" onclick="setPeriodPreset('ALL')">Tutto</button>
     <span style="width:1px;height:20px;background:var(--border);margin:0 4px"></span>
     <span style="font-size:11px;color:var(--text3);font-weight:600">Custom:</span>
-    <input type="date" id="periodFrom" onchange="setPeriodCustom()" style="height:32px;padding:0 8px;border:1px solid var(--border2);border-radius:var(--r-sm);font-family:inherit;font-size:12px;color:var(--text);background:var(--surface)">
+    <input type="date" id="periodFrom" min="2025-04-01" onchange="setPeriodCustom()" style="height:32px;padding:0 8px;border:1px solid var(--border2);border-radius:var(--r-sm);font-family:inherit;font-size:12px;color:var(--text);background:var(--surface)">
     <span style="font-size:11px;color:var(--text3)">→</span>
-    <input type="date" id="periodTo" onchange="setPeriodCustom()" style="height:32px;padding:0 8px;border:1px solid var(--border2);border-radius:var(--r-sm);font-family:inherit;font-size:12px;color:var(--text);background:var(--surface)">
+    <input type="date" id="periodTo" min="2025-04-01" onchange="setPeriodCustom()" style="height:32px;padding:0 8px;border:1px solid var(--border2);border-radius:var(--r-sm);font-family:inherit;font-size:12px;color:var(--text);background:var(--surface)">
     <span id="periodLabel" style="margin-left:auto;font-size:11px;color:var(--text3);font-weight:600"></span>
   </div>
 
@@ -1108,6 +1108,8 @@ async function uploadPaypal(file){
 // ─── FILTRO PERIODO PANORAMICA ────────────────────────────────────
 // Stato filtro: 'preset' è uno tra '3M','6M','YTD','1Y','ALL','CUSTOM'.
 // Quando 'CUSTOM', usa periodFrom/periodTo (stringhe ISO YYYY-MM-DD).
+// MIN_DATE deve corrispondere al CUTOFF_DATE del backend.
+const MIN_DATE = new Date(2025, 3, 1);  // 1° aprile 2025 (mese 3 = aprile, 0-indexed)
 let PERIOD = { preset: 'YTD', from: null, to: null };
 
 function _isoToDate(iso){
@@ -1116,22 +1118,27 @@ function _isoToDate(iso){
   return new Date(+y, +m-1, +d);
 }
 
+function _clampToMin(d){
+  // Mai andare prima del cutoff
+  return d && d < MIN_DATE ? MIN_DATE : d;
+}
+
 function getPeriodRange(){
-  // Ritorna {from: Date, to: Date} oppure {from:null,to:null} per 'tutto'.
+  // Ritorna {from: Date, to: Date} oppure {from:MIN_DATE,to:null} per 'tutto'.
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if(PERIOD.preset === 'ALL') return {from:null, to:null};
+  if(PERIOD.preset === 'ALL') return {from: MIN_DATE, to: today};
   if(PERIOD.preset === 'CUSTOM'){
     return {
-      from: PERIOD.from ? new Date(PERIOD.from+'T00:00:00') : null,
+      from: _clampToMin(PERIOD.from ? new Date(PERIOD.from+'T00:00:00') : null),
       to:   PERIOD.to   ? new Date(PERIOD.to  +'T23:59:59') : null,
     };
   }
   if(PERIOD.preset === 'YTD'){
-    return { from: new Date(now.getFullYear(), 0, 1), to: today };
+    return { from: _clampToMin(new Date(now.getFullYear(), 0, 1)), to: today };
   }
   const months = {'3M':3, '6M':6, '1Y':12}[PERIOD.preset] || 12;
-  const from = new Date(now.getFullYear(), now.getMonth()-months+1, 1);
+  const from = _clampToMin(new Date(now.getFullYear(), now.getMonth()-months+1, 1));
   return { from, to: today };
 }
 
